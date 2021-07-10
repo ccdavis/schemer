@@ -2,6 +2,7 @@ mod interpreter;
 mod list;
 mod primitives;
 mod symbolic_expression;
+mod parser;
 
 use crate::primitives::Cell;
 use crate::list::List;
@@ -30,6 +31,33 @@ fn main() {
 	println!("Variable type list: {}", &m.print());
 	println!("List of lists {}",p.print());
 	println!("sum of numbers: {}",summed.evaluate().unwrap().print());
+	
+	let tokens = parser::lex(String::from("(+ 1 2 3 (+ 5 6))"));
+	
+	match parser::parse(&tokens){
+		Ok((valid_ast,_)) =>{		
+			// Parser seemed to work, so attempt to interpret the AST
+			let r = interpreter::evaluate(valid_ast);			
+			// Check for interpreter errors
+			match r {
+				Ok(good_result) => println!("Lex-parse-evaluate result is {}", good_result.print()),
+				Err(error) => println!("Interpreter Error: {}", error),
+			}
+		},
+		// Parsing errors
+		Err(error) =>{
+			// handle different types of errors
+			match error{
+				parser::ParseError::Reason(reason) =>println!("{}", reason),
+			}
+		}
+	}
+	
+	
+	
+	
+	
+	
 	
 	
 	
