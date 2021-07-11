@@ -1,7 +1,11 @@
 use crate::symbolic_expression::SExpression;
+use std::collections::HashMap;
+
+use strum::IntoEnumIterator; // 0.17.1
+use strum_macros::EnumIter; // 0.17.1
 
 
-#[derive(Clone,Copy)]
+#[derive(Debug,Clone,Copy,EnumIter)]
 pub enum NumericOperator{
 	Add,
 	Subtract,
@@ -10,7 +14,7 @@ pub enum NumericOperator{
 	Modulo,
 }
 
-#[derive(Clone,Copy)]
+#[derive(Debug,Clone,Copy,EnumIter)]
 pub enum BooleanOperator{
 	Less,
 	Greater,
@@ -36,14 +40,12 @@ impl BooleanOperator{
 			BooleanOperator::Greater=>">",
 			BooleanOperator::Less=>"<",
 			BooleanOperator::Equal=>"=",
-			BooleanOperator::NotEqual=>"<>",
-			
+			BooleanOperator::NotEqual=>"<>",			
 		}
-	}
-		
+	}		
 }
 
-#[derive(Clone,Copy)]
+#[derive(Debug,Clone,Copy,EnumIter)]
 pub enum SpecialForm{
 	DefineFunction,
 	DefineVariable,
@@ -75,6 +77,9 @@ pub enum Cell{
 }
 
 impl Cell{
+
+	// Returns a map for use in parsing
+	
 	pub fn print(&self)->String{
 		match &self{
 			Cell::Int(value)=>value.to_string(),
@@ -101,3 +106,14 @@ impl Cell{
 
 } // impl Cell
 
+
+	pub fn map_cell_from_string() -> HashMap<String, Cell>{
+		let mut cells:HashMap<String,Cell> = HashMap::new();		
+		for numeric_op in NumericOperator::iter(){
+			let c = Cell::Op(numeric_op);			
+			cells.insert(String::from(numeric_op.print()), c);			
+		}
+			
+		cells
+	}
+		

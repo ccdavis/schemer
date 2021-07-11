@@ -33,8 +33,8 @@ fn main() {
 	println!("sum of numbers: {}",summed.evaluate().unwrap().print());
 	
 	let tokens = parser::lex(String::from("(+ 1 2 3 (+ 5 6))"));
-	
-	match parser::parse(&tokens){
+	let p = parser::Parser::new();
+	match p.parse(&tokens){
 		Ok((valid_ast,_)) =>{		
 			// Parser seemed to work, so attempt to interpret the AST
 			let r = interpreter::evaluate(valid_ast);			
