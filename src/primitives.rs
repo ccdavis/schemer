@@ -15,11 +15,16 @@ pub enum NumericOperator{
 }
 
 #[derive(Debug,Clone,Copy,EnumIter)]
-pub enum BooleanOperator{
+pub enum LogicalOperator{
 	Less,
 	Greater,
 	Equal,
-	NotEqual,
+	GreaterEqual,
+	LessEqual,
+	Or,
+	And,
+	Not,
+	Xor,	
 }
 
 impl NumericOperator{
@@ -29,18 +34,24 @@ impl NumericOperator{
 			NumericOperator::Subtract=>"-",
 			NumericOperator::Multiply=>"*",
 			NumericOperator::Divide=>"/",
-			NumericOperator::Modulo=>"%",
+			NumericOperator::Modulo=>"%",			
 		}
 	}
 }
 
-impl BooleanOperator{
+impl LogicalOperator{
 	pub fn print(self)->&'static str{
 		match self{
-			BooleanOperator::Greater=>">",
-			BooleanOperator::Less=>"<",
-			BooleanOperator::Equal=>"=",
-			BooleanOperator::NotEqual=>"<>",			
+			LogicalOperator::Greater=>">",
+			LogicalOperator::Less=>"<",
+			LogicalOperator::Equal=>"=",
+			LogicalOperator::GreaterEqual=>">=",
+			LogicalOperator::LessEqual=>"<=",			
+			LogicalOperator::Or=>"or",
+			LogicalOperator::And=>"and",
+			LogicalOperator::Not=>"not",
+			LogicalOperator::Xor=>"xor",
+			
 		}
 	}		
 }
@@ -71,7 +82,7 @@ pub enum Cell{
 	Bool(bool),
 	Symbol(i32,String),	
 	Op(NumericOperator),
-	Compare(BooleanOperator),
+	Logical(LogicalOperator),
 	Special(SpecialForm),	 // other built-in functions
 	Lambda(Box<SExpression>,Box<SExpression>), // arguments and body of the lambda
 }
@@ -87,8 +98,8 @@ impl Cell{
 			Cell::Str(value)=>value.to_string(),
 			Cell::Symbol(number,name)=>{String::from("Symbol ") + &number.to_string() + &name},
 			Cell::Bool(value) => value.to_string(),
-			Cell::Op(operator) => String::from("Numeric operator"),
-			Cell::Compare(operator)=>String::from("comparison operator"),
+			Cell::Op(operator) => String::from(format!("Numeric operator {}", operator.print())),
+			Cell::Logical(operator)=>String::from(format!("Logical operator{}", operator.print())),
 			Cell::Special(special_form)=> String::from("Special form"),			
 			Cell::Lambda(_,_) => String::from("Lambda: ")
 		}		
@@ -102,8 +113,6 @@ impl Cell{
 			_ => Err("Not a number type!".to_string()),
 		}
 	}
-
-
 } // impl Cell
 
 
@@ -112,6 +121,11 @@ impl Cell{
 		for numeric_op in NumericOperator::iter(){
 			let c = Cell::Op(numeric_op);			
 			cells.insert(String::from(numeric_op.print()), c);			
+		}
+		
+		for boolean_op in LogicalOperator::iter(){
+			let c = Cell::Logical(boolean_op);			
+			cells.insert(String::from(boolean_op.print()), c);			
 		}
 			
 		cells

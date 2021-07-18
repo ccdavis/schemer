@@ -2,7 +2,7 @@
 use crate::symbolic_expression::SExpression;
 use crate::primitives::Cell;
 use crate::interpreter::apply_operator;
-
+use crate::interpreter::apply_logical_operator;
 
 // Built in simple functions
 use std::collections::HashMap;
@@ -110,6 +110,7 @@ impl List{
 				SExpression::Cell(cell)=>
 					match cell{
 						Cell::Op(operator)=> apply_operator(operator, self.rest()),
+						Cell::Logical(operator)=> apply_logical_operator(operator, self.rest()),
 						_ =>   Err("Evaluation on this cell type  not supported".to_string()),
 					},				
 				SExpression::List(sub_list) => sub_list.evaluate(),

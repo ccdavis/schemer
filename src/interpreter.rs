@@ -1,6 +1,7 @@
 
 use crate::primitives::Cell;
 use crate::primitives::NumericOperator;
+use crate::primitives::LogicalOperator;
 use crate::symbolic_expression::SExpression;
 use crate::list::List;
 
@@ -135,18 +136,24 @@ use crate::list::List;
 			} // Some(right_value)
 		} // match					
 	}
+	
+	fn eval_or(list:List)->Result<SExpression, String>{
+		// eval each element as true or false. If a number, 0 is false anything else is true
+		Ok(SExpression::Cell(Cell::Bool(true)))
+		
+	}
 
 
 		
-// Evaluate any  S-Expression
-pub fn evaluate(exp:SExpression)-> Result<SExpression,String>{		
-	match exp{
-		SExpression::Cell(_)=>Ok(exp),
-		SExpression::List(list)=> list.evaluate(),
-		SExpression::Null => Ok(exp)
-			
+	// Evaluate any  S-Expression
+	pub fn evaluate(exp:SExpression)-> Result<SExpression,String>{		
+		match exp{
+			SExpression::Cell(_)=>Ok(exp),
+			SExpression::List(list)=> list.evaluate(),
+			SExpression::Null => Ok(exp)
+				
+		}
 	}
-}
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:
 	pub fn apply_operator(func:NumericOperator, list:List)-> Result<SExpression, String>{		
@@ -171,4 +178,30 @@ pub fn evaluate(exp:SExpression)-> Result<SExpression,String>{
 		}
 	}
 	
+
+	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:
+	pub fn apply_logical_operator(func:LogicalOperator, list:List)-> Result<SExpression, String>{		
+		// The cdr (now list) must have at least two items
+		if list.is_empty(){
+			return Err(String::from("Operator ") + func.print() + " requires two arguments");			
+		}
+		
+		if list.rest().is_empty(){
+			return Err(String::from("Operator ") + func.print() + " requires two arguments");
+					
+		}
+		
+		use crate::primitives::LogicalOperator::*;
+		let not_implemented = String::from("Operator not implemented");
+		match func {
+			Or=> eval_or(list),				
+			//And=>eval_and(list), 
+			//Not=> eval_not(list),
+			//Xor=> eval_xor(list),
+			Greater=> Err(not_implemented),
+			_ =>Err(not_implemented),
+		}
+	}
+	
+
 
