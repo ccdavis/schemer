@@ -23,6 +23,34 @@ impl SExpression{
 		}		
 	}
 	
+	pub fn eval_as_bool(self) -> Result<Cell,String>{
+		match self{
+			SExpression::Cell(cell) => {
+				cell.eval_as_bool().clone()
+			},
+			SExpression::List(_) =>{
+				match evaluate(self){
+					Ok(value)=> value.eval_as_bool().clone(),
+					Err(message) => Err(message),
+				}
+					
+			},
+			SExpression::Null => Err("Null is not a boolean".to_string()),
+		}
+	}
+	// A helper to extract the simple Rust bool value while bringing along any type errors
+	pub fn eval_as_rust_bool(self) -> Result<bool, String>{
+		match self.eval_as_bool() {
+			Ok(bool_value) =>{
+				match bool_value{
+					Cell::Bool(truth) =>  Ok(truth),
+					_ => Err(format!("Not a boolean type {}",bool_value.print())),
+				}
+			},
+			Err(message) =>  Err(message),
+		}
+	}
+	
 	// Special version of the more general evaluate
 	pub fn eval_as_number(self)->Result<Cell, String>{
 		match self{

@@ -113,9 +113,27 @@ impl Cell{
 			_ => Err("Not a number type!".to_string()),
 		}
 	}
+
+	// Convenience for  implementing logical operators
+	// Numbers can be arguments to logical ops like "or", "and" like (and 2 5 0) which would be false.
+	// These are not bit-wise operators.
+	pub fn eval_as_bool(&self)->Result<Cell, String>{
+		match self{
+			Cell::Int(value)=> {
+				let gt0:bool = 0 < *value;
+				Ok(Cell::Bool(gt0))
+			},
+			Cell::Flt(value)=>{
+				let gt0:bool = *value > 0.0; 
+				Ok(Cell::Bool(gt0))
+			},
+			Cell::Bool(value) => Ok(self.clone()),
+			_ => Err("Not a boolean type!".to_string()),
+		}
+	}
 } // impl Cell
 
-
+	// This is a helper for the parser
 	pub fn map_cell_from_string() -> HashMap<String, Cell>{
 		let mut cells:HashMap<String,Cell> = HashMap::new();		
 		for numeric_op in NumericOperator::iter(){

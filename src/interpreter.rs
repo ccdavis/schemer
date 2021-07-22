@@ -137,12 +137,46 @@ use crate::list::List;
 		} // match					
 	}
 	
-	fn eval_or(list:List)->Result<SExpression, String>{
-		// eval each element as true or false. If a number, 0 is false anything else is true
-		Ok(SExpression::Cell(Cell::Bool(true)))
+	fn eval_greater(list:List)->Result<SExpression,String>{
+		if list.rest().is_empty(){
+			return Ok(SExpression::Cell(Cell::Bool(true)));
+		}
+		let left  = list.first().eval_as_number();
+		let right = list.rest().first().eval_as_number();
 		
+		let gt = match (left.unwrap(),right.unwrap()) {
+			(Cell::Int(i),Cell::Int(j)) => i > j,
+			(Cell::Int(i), Cell::Flt(j))=> i as f64 > j,
+			(Cell::Flt(i), Cell::Int(j)) => i > j as f64,
+			(Cell::Flt(i), Cell::Flt(j)) => i > j,
+			_ => panic!("Type checking error, needed number type."),
+		};
+			
+		if  gt {
+			eval_greater(list.rest())
+		}else{
+			Ok(SExpression::Cell(Cell::Bool(false)))
+		}	
+	}	
+	
+	fn eval_or(list:List)->Result<SExpression, String>{
+		let bool_value  = list.first().eval_as_rust_bool();
+		match bool_value {
+			Ok(truth)=>{
+				if truth { 
+					Ok(SExpression::Cell(Cell::Bool(true)))
+				}else{
+					if list.rest().is_empty(){
+						Ok(SExpression::Cell(Cell::Bool(true)))
+					}else{
+						eval_or(list.rest())				
+					}
+						}
+				}, // ok truth
+				Err(message)=> Err(message)		
+			} // match bool_value
+					
 	}
-
 
 		
 	// Evaluate any  S-Expression
@@ -194,6 +228,7 @@ use crate::list::List;
 		use crate::primitives::LogicalOperator::*;
 		let not_implemented = String::from("Operator not implemented");
 		match func {
+			Greater=>eval_greater(list),
 			Or=> eval_or(list),				
 			//And=>eval_and(list), 
 			//Not=> eval_not(list),
