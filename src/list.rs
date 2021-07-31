@@ -1,18 +1,10 @@
 
 use crate::symbolic_expression::SExpression;
 use crate::primitives::Cell;
-use crate::interpreter::apply_operator;
-use crate::interpreter::apply_logical_operator;
-
-// Built in simple functions
-use std::collections::HashMap;
-// Results of 'define' go here
-struct Environment{
-	data:HashMap<String,SExpression>	
-}
+use crate::interpreter::Environment;
 
 #[derive(Clone)]
-struct Pair{
+pub struct Pair{
 	car:Box<SExpression>,
 	cdr:Link,
 }
@@ -101,7 +93,7 @@ impl List{
 	}	
 	
 	
-		pub fn evaluate(&self)-> Result<SExpression,String>{
+		pub fn evaluate(&self, envr:&Environment)-> Result<SExpression,String>{
 			let car = self.first();		
 			
 			// A list with a first cell of an operator or user-defined function
@@ -109,11 +101,11 @@ impl List{
 			match *car{
 				SExpression::Cell(cell)=>
 					match cell{
-						Cell::Op(operator)=> apply_operator(operator, self.rest()),
-						Cell::Logical(operator)=> apply_logical_operator(operator, self.rest()),
+						Cell::Op(operator)=> envr.apply_operator(operator, self.rest()),
+						Cell::Logical(operator)=> envr.apply_logical_operator(operator, self.rest()),
 						_ =>   Err("Evaluation on this cell type  not supported".to_string()),
 					},				
-				SExpression::List(sub_list) => sub_list.evaluate(),
+				SExpression::List(sub_list) => sub_list.evaluate(envr),
 				SExpression::Null => Ok(SExpression::Null),
 			}											
 		}

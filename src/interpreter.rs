@@ -6,12 +6,27 @@ use crate::symbolic_expression::SExpression;
 use crate::list::List;
 
 
-	fn add(list:List)->Result<SExpression,String>{			
-		add_to(Cell::Int(0), list)
+// Built in simple functions
+use std::collections::HashMap;
+// Results of 'define' go here
+pub struct Environment{
+	pub definitions:HashMap<String,SExpression>,	
+}
+
+impl Environment{
+	pub fn new()->Self{
+		let mut no_definitions :HashMap<String, SExpression> = HashMap::new();
+		Environment{ definitions: no_definitions}
+	}
+
+
+
+	fn add(&self, list:List)->Result<SExpression,String>{			
+		self.add_to(Cell::Int(0), list)
 	}
 	
-	fn add_to(left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(){
+	fn add_to(&self, left_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(&self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -30,19 +45,19 @@ use crate::list::List;
 				if list.rest().is_empty(){
 					Ok(SExpression::Cell(partial_sum))
 				}else{			
-					add_to(partial_sum, list.rest())		
+					self.add_to(partial_sum, list.rest())		
 				}
 			} // Some(right_value)
 		} // match					
 	}
 
 
-	fn subtract(list:List)->Result<SExpression,String>{			
-		subtract_from(Cell::Int(0), list)
+	fn subtract(&self, list:List)->Result<SExpression,String>{			
+		self.subtract_from(Cell::Int(0), list)
 	}
 	
-	fn subtract_from(left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(){
+	fn subtract_from(&self, left_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(&self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -61,7 +76,7 @@ use crate::list::List;
 				if list.rest().is_empty(){
 					Ok(SExpression::Cell(partial_sum))
 				}else{			
-					subtract_from(partial_sum, list.rest())		
+					self.subtract_from(partial_sum, list.rest())		
 				}
 			} // Some(right_value)
 		} // match					
@@ -69,12 +84,12 @@ use crate::list::List;
 
 
 
-	fn multiply(list:List)->Result<SExpression,String>{			
-		multiply_by(Cell::Int(1), list)
+	fn multiply(&self, list:List)->Result<SExpression,String>{			
+		self.multiply_by(Cell::Int(1), list)
 	}
 	
-	fn multiply_by(left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(){
+	fn multiply_by(&self, left_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(&self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -92,7 +107,7 @@ use crate::list::List;
 				if list.rest().is_empty(){
 					Ok(SExpression::Cell(partial_product))
 				}else{			
-					multiply_by(partial_product, list.rest())		
+					self.multiply_by(partial_product, list.rest())		
 				}
 			} // Some(right_value)
 		} // match					
@@ -100,20 +115,20 @@ use crate::list::List;
 
 
 
-	fn divide(list:List)->Result<SExpression,String>{			
+	fn divide(&self, list:List)->Result<SExpression,String>{			
 		// If there's only one argument to /
 		if list.rest().is_empty(){
-			divide_into(Cell::Int(1), list)		
+			self.divide_into(Cell::Int(1), list)		
 		}else{
-			match list.first().eval_as_number(){
-				Ok(numerator) => divide_into(numerator, list.rest()),
+			match list.first().eval_as_number(&self){
+				Ok(numerator) => self.divide_into(numerator, list.rest()),
 				Err(message) => Err(message),
 			} // match				
 		} // else
 	}
 	
-	fn divide_into(numerator_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(){
+	fn divide_into(&self, numerator_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(&self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -131,18 +146,18 @@ use crate::list::List;
 				if list.rest().is_empty(){
 					Ok(SExpression::Cell(partial_product))
 				}else{			
-					divide_into(partial_product, list.rest())		
+					self.divide_into(partial_product, list.rest())		
 				}
 			} // Some(right_value)
 		} // match					
 	}
 	
-	fn eval_greater(list:List)->Result<SExpression,String>{
+	fn eval_greater(&self, list:List)->Result<SExpression,String>{
 		if list.rest().is_empty(){
 			return Ok(SExpression::Cell(Cell::Bool(true)));
 		}
-		let left  = list.first().eval_as_number();
-		let right = list.rest().first().eval_as_number();
+		let left  = list.first().eval_as_number(&self);
+		let right = list.rest().first().eval_as_number(&self);
 		
 		let gt = match (left.unwrap(),right.unwrap()) {
 			(Cell::Int(i),Cell::Int(j)) => i > j,
@@ -153,14 +168,14 @@ use crate::list::List;
 		};
 			
 		if  gt {
-			eval_greater(list.rest())
+			self.eval_greater(list.rest())
 		}else{
 			Ok(SExpression::Cell(Cell::Bool(false)))
 		}	
 	}	
 	
-	fn eval_or(list:List)->Result<SExpression, String>{
-		let bool_value  = list.first().eval_as_rust_bool();
+	fn eval_or(&self, list:List)->Result<SExpression, String>{
+		let bool_value  = list.first().eval_as_rust_bool(&self);
 		match bool_value {
 			Ok(truth)=>{
 				if truth { 
@@ -169,7 +184,7 @@ use crate::list::List;
 					if list.rest().is_empty(){
 						Ok(SExpression::Cell(Cell::Bool(true)))
 					}else{
-						eval_or(list.rest())				
+						self.eval_or(list.rest())				
 					}
 						}
 				}, // ok truth
@@ -180,17 +195,32 @@ use crate::list::List;
 
 		
 	// Evaluate any  S-Expression
-	pub fn evaluate(exp:SExpression)-> Result<SExpression,String>{		
+	pub fn evaluate(&self, exp:SExpression)-> Result<SExpression,String>{		
 		match exp{
-			SExpression::Cell(_)=>Ok(exp),
-			SExpression::List(list)=> list.evaluate(),
+			SExpression::Cell(c)=>
+				match c {				
+					// The idea is to  use the number instead of the name to do
+					// lookup in a vector of definitions for better performance...
+					// but the hash map gets us started.
+					Cell::Symbol(number, symbol)=> {
+						match self.definitions.get(&symbol) {
+							Some(expr) => Ok(expr.clone()),
+							_ => Err(format!("Symbol {} not defined.",&symbol))
+						}
+						
+						
+					},
+					_ => Ok(SExpression::Cell(c)),
+				},
+			SExpression::List(list)=> list.evaluate(&self),
 			SExpression::Null => Ok(exp)
 				
 		}
 	}
+	
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:
-	pub fn apply_operator(func:NumericOperator, list:List)-> Result<SExpression, String>{		
+	pub fn apply_operator(&self, func:NumericOperator, list:List)-> Result<SExpression, String>{		
 		// The cdr (now list) must have at least two items
 		if list.is_empty(){
 			return Err(String::from("Operator ") + func.print() + " requires two arguments");			
@@ -204,17 +234,17 @@ use crate::list::List;
 		use crate::primitives::NumericOperator::*;
 		let not_implemented = String::from("Operator not implemented");
 		match func {
-			Add=> add(list),				
-			Subtract=>subtract(list), 
-			Multiply=> multiply(list),
-			Divide=> divide(list),
+			Add=> self.add(list),				
+			Subtract=> self.subtract(list), 
+			Multiply=>  self.multiply(list),
+			Divide=>  self.divide(list),
 			Modulo=> Err(not_implemented),
 		}
 	}
 	
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:
-	pub fn apply_logical_operator(func:LogicalOperator, list:List)-> Result<SExpression, String>{		
+	pub fn apply_logical_operator(&self, func:LogicalOperator, list:List)-> Result<SExpression, String>{		
 		// The cdr (now list) must have at least two items
 		if list.is_empty(){
 			return Err(String::from("Operator ") + func.print() + " requires two arguments");			
@@ -228,8 +258,8 @@ use crate::list::List;
 		use crate::primitives::LogicalOperator::*;
 		let not_implemented = String::from("Operator not implemented");
 		match func {
-			Greater=>eval_greater(list),
-			Or=> eval_or(list),				
+			Greater=> self.eval_greater(list),
+			Or=> self.eval_or(list),				
 			//And=>eval_and(list), 
 			//Not=> eval_not(list),
 			//Xor=> eval_xor(list),
@@ -237,6 +267,6 @@ use crate::list::List;
 			_ =>Err(not_implemented),
 		}
 	}
-	
+	} // Environment
 
 

@@ -1,7 +1,8 @@
 
 use crate::primitives::Cell;
 use crate::list::List;
-use crate::interpreter::evaluate;
+use crate::interpreter::Environment;
+
 
 
 #[derive(Clone)]
@@ -23,14 +24,14 @@ impl SExpression{
 		}		
 	}
 	
-	pub fn eval_as_bool(self) -> Result<Cell,String>{
+	pub fn eval_as_bool(self, envr:&Environment) -> Result<Cell,String>{
 		match self{
 			SExpression::Cell(cell) => {
 				cell.eval_as_bool().clone()
 			},
 			SExpression::List(_) =>{
-				match evaluate(self){
-					Ok(value)=> value.eval_as_bool().clone(),
+				match envr.evaluate(self){
+					Ok(value)=> value.eval_as_bool(&envr).clone(),
 					Err(message) => Err(message),
 				}
 					
@@ -39,8 +40,8 @@ impl SExpression{
 		}
 	}
 	// A helper to extract the simple Rust bool value while bringing along any type errors
-	pub fn eval_as_rust_bool(self) -> Result<bool, String>{
-		match self.eval_as_bool() {
+	pub fn eval_as_rust_bool(self, envr:&Environment) -> Result<bool, String>{
+		match self.eval_as_bool(&envr) {
 			Ok(bool_value) =>{
 				match bool_value{
 					Cell::Bool(truth) =>  Ok(truth),
@@ -52,14 +53,14 @@ impl SExpression{
 	}
 	
 	// Special version of the more general evaluate
-	pub fn eval_as_number(self)->Result<Cell, String>{
+	pub fn eval_as_number(self, envr:&Environment)->Result<Cell, String>{
 		match self{
 			SExpression::Cell(cell) => {
 				cell.eval_as_number().clone()
 			},
 			SExpression::List(_) =>{
-				match evaluate(self){
-					Ok(value)=> value.eval_as_number().clone(),
+				match envr.evaluate(self){
+					Ok(value)=> value.eval_as_number(&envr).clone(),
 					Err(message) => Err(message),
 				}
 					

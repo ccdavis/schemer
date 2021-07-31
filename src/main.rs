@@ -21,13 +21,13 @@ fn number_list()->List{
 
 
 // Put this in the REPL loop
-fn interpret(program:String)->String{
+fn interpret(program:String, environment:&mut interpreter::Environment)->String{
 	let tokens = parser::lex(program);
 	let p = parser::Parser::new();
 	match p.parse(&tokens){
 		Ok((valid_ast,_)) =>{		
 			// Parser seemed to work, so attempt to interpret the AST
-			let r = interpreter::evaluate(valid_ast);			
+			let r = environment.evaluate(valid_ast);			
 			// Check for interpreter errors
 			match r {
 				Ok(good_result) => good_result.print(),
@@ -55,13 +55,21 @@ fn main() {
 	println!("Content: {}", &n.print());	
 	println!("Variable type list: {}", &m.print());
 	println!("List of lists {}",p.print());
-	println!("sum of numbers: {}",summed.evaluate().unwrap().print());
 	
-	println!("{}",interpret(String::from("(+ 1 2 3 (+ 5 6))")));
-	println!("{}",interpret(String::from("(+ 1 2 3 (* 5 6))")));
-	println!("{}",interpret(String::from("(/ 10 5)")));
-	println!("{}",interpret(String::from("(/ 5 10)")));
-	println!("{}",interpret(String::from("(* 8 (/ 5 10))")));
-	println!("{}",interpret(String::from("(- 8 (* 2 25) (+ 2 3) (/ 5 10))")));
+	
+	let mut envr = interpreter::Environment::new();
+	println!("sum of numbers: {}",summed.evaluate(&mut envr).unwrap().print());
+	
+	
+	
+	println!("{}",
+		interpret(String::from("(+ 1 2 3 (+ 5 6))"),&mut envr));
+		
+	println!("{}",interpret(String::from("(+ 1 2 3 (* 5 6))"),&mut envr));
+	
+	println!("{}",interpret(String::from("(/ 10 5)"),&mut envr));
+	println!("{}",interpret(String::from("(/ 5 10)"),&mut envr));
+	println!("{}",interpret(String::from("(* 8 (/ 5 10))"),&mut envr));
+	println!("{}",interpret(String::from("(- 8 (* 2 25) (+ 2 3) (/ 5 10))"),&mut envr));
 }
 	
