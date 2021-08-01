@@ -2,6 +2,7 @@
 use crate::primitives::Cell;
 use crate::primitives::NumericOperator;
 use crate::primitives::LogicalOperator;
+use crate::primitives::SpecialForm;
 use crate::symbolic_expression::SExpression;
 use crate::list::List;
 
@@ -9,15 +10,35 @@ use crate::list::List;
 // Built in simple functions
 use std::collections::HashMap;
 // Results of 'define' go here
-pub struct Environment{
+pub struct Environment <'a>{
 	pub definitions:HashMap<String,SExpression>,	
+	lookup:Vec<&'a SExpression>
 }
 
-impl Environment{
+impl <'a> Environment <'a>{
 	pub fn new()->Self{
-		let mut no_definitions :HashMap<String, SExpression> = HashMap::new();
-		Environment{ definitions: no_definitions}
+		let no_definitions :HashMap<String, SExpression> = HashMap::new();
+		let empty_lookup = Vec::new();
+		Environment{ definitions: no_definitions, lookup:empty_lookup}
 	}
+	
+	
+	// Shortcut to add symbols to the environment
+	fn define(mut self, name:String, value:SExpression)->Result<i32, String>{
+		if self.definitions.contains_key(&name){
+			Err(format!("{} already defined.", &name))
+		}else{
+			let number = self.definitions.keys().len();			
+			self.definitions.insert(name, value);			
+			//self.lookup.push(&value);
+			Ok(number as i32)
+			}
+		
+		
+		
+	}
+	
+	
 
 
 
@@ -195,10 +216,10 @@ impl Environment{
 
 		
 	// Evaluate any  S-Expression
-	pub fn evaluate(&self, exp:SExpression)-> Result<SExpression,String>{		
+	pub fn evaluate(&self, exp:SExpression)-> Result<SExpression,String>{
 		match exp{
 			SExpression::Cell(c)=>
-				match c {				
+				match c {														
 					// The idea is to  use the number instead of the name to do
 					// lookup in a vector of definitions for better performance...
 					// but the hash map gets us started.
@@ -207,8 +228,7 @@ impl Environment{
 							Some(expr) => Ok(expr.clone()),
 							_ => Err(format!("Symbol {} not defined.",&symbol))
 						}
-						
-						
+											
 					},
 					_ => Ok(SExpression::Cell(c)),
 				},
@@ -217,6 +237,20 @@ impl Environment{
 				
 		}
 	}
+		
+		
+	pub fn apply_special_form(&self, func:SpecialForm, args:List)->Result<SExpression,String>{
+		match func {
+			SpecialForm::Define => {
+				let new_symbol = args.first();
+				let value_for_symbol = args.rest().first();
+				println!("Would define {} as {}", new_symbol.print(), value_for_symbol.print());
+				Ok(*new_symbol)								
+			},
+			_ => Err(format!("Special form {} not implemented!", "not printable").to_string())
+		}
+	}
+	
 	
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:

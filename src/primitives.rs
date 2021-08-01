@@ -58,9 +58,8 @@ impl LogicalOperator{
 
 #[derive(Debug,Clone,Copy,EnumIter)]
 pub enum SpecialForm{
-	DefineFunction,
-	DefineVariable,
-	LetVariable,
+	Define,	
+	Let,
 	SetCar,
 	Cond,
 	If,

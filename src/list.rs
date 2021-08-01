@@ -101,6 +101,7 @@ impl List{
 			match *car{
 				SExpression::Cell(cell)=>
 					match cell{
+						Cell::Special(form) => envr.apply_special_form(form, self.rest()),
 						Cell::Op(operator)=> envr.apply_operator(operator, self.rest()),
 						Cell::Logical(operator)=> envr.apply_logical_operator(operator, self.rest()),
 						_ =>   Err("Evaluation on this cell type  not supported".to_string()),
