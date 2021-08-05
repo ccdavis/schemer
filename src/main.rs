@@ -3,6 +3,8 @@ mod list;
 mod primitives;
 mod symbolic_expression;
 mod parser;
+use rustyline::error::ReadlineError;
+use rustyline::Editor;
 
 use crate::primitives::Cell;
 use crate::list::List;
@@ -11,13 +13,6 @@ use crate::list::cons;
 
 use crate::symbolic_expression::SExpression;
 use crate::primitives::NumericOperator;
-
-// Construct some basic list types as tests
-fn number_list()->List{
-	let c = cons(SExpression::Cell(Cell::Int(25)), 
-		cons(SExpression::Cell(Cell::Int(5)), Link::Nil));
-	List{head:c}
-}
 
 
 // Put this in the REPL loop
@@ -45,7 +40,51 @@ fn interpret(program:String, environment:&mut interpreter::Environment)->String{
 }
 
 
-fn main() {
+// From the Rustyline README
+fn repl(){	
+    // `()` can be used when no completer is required
+    let mut rl = Editor::<()>::new();
+    if rl.load_history("history.txt").is_err() {
+        println!("No previous history.");
+    }
+	
+	// The environment for the duration of the REPL session
+	let mut envr = interpreter::Environment::new();
+    loop {
+        let readline = rl.readline(">> ");
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str());								
+				let results = interpret(line, &mut envr);
+                println!("=>  {}", &results);
+            },
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break
+            },
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break
+            },
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break
+            }
+        }
+    }
+    rl.save_history("history.txt").unwrap();	
+}
+
+// Construct some basic list types as tests
+fn number_list()->List{
+	let c = cons(SExpression::Cell(Cell::Int(25)), 
+		cons(SExpression::Cell(Cell::Int(5)), Link::Nil));
+	List{head:c}
+}
+
+// These aren't unit or acceptance  tests, but a place to put experimental
+// language features and see what crashes.
+fn run_tests(){
 	let n = number_list();	
 	let m = List::make_from_cells(vec![Cell::Int(5), Cell::Int(7), Cell::Str("abc".to_string())]);
 	let p = List::make_from_sexps(vec![SExpression::List(m.clone()),SExpression::List(n.clone())]);
@@ -71,5 +110,10 @@ fn main() {
 	println!("{}",interpret(String::from("(/ 5 10)"),&mut envr));
 	println!("{}",interpret(String::from("(* 8 (/ 5 10))"),&mut envr));
 	println!("{}",interpret(String::from("(- 8 (* 2 25) (+ 2 3) (/ 5 10))"),&mut envr));
+}
+
+fn main() {
+	repl()
+	
 }
 	
