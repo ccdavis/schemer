@@ -10,37 +10,72 @@ use crate::list::List;
 // Built in simple functions
 use std::collections::HashMap;
 // Results of 'define' go here
-pub struct Environment <'a>{
-	pub definitions:HashMap<String,SExpression>,	
-	lookup:Vec<&'a SExpression>
+pub struct Environment{
+	pub definitions_by_symbol:HashMap<String, usize>,	
+	definitions:Vec<SExpression>
 }
 
-impl <'a> Environment <'a>{
+
+
+/*
+High-performance storage of all defined symbols:
+
+Q: Why doesn't the compiler and borrow-checker in particular allow for this?
+
+		definitions: Vec<Sexpression>,
+		definitions_by_name:HashMap<s_name:String, &Sexpression>,
+	...
+	
+		definitions.push(exp);
+		let last = definitions.len()-1;
+		definitions_by_name.insert(name, &definitions[last]);
+	
+A:
+	The Vec may get resized as it gets added to; the memory locations of the references aren't fixed. In C++ you could do this safely either
+	with a pre-reserved vector or better yet with a deque which has the guarantee of no copying and moving of contents; it is made up of a sequence of linked blocks (you give up a bit of lookup time perf in exchange.)
+
+Q: Why doesn't the reverse work: Storing references in the Vec and the original in the HashMap?
+
+A: Either the borrow-checker isn't smart enough to automatically assign lifetimes or the HashMap cannot guarantee  no moving around of its
+content...  I couldn't figure out a way to specify lifetimes to make it compile: From a C++ point-of view this should be 
+safe but it may well not be in Rust.
+//
+
+The cannonical solution to this in Rust seems to be to store indexes into the Vec  in the HashMap rather than direct references
+to the same data. It feels a bit less direct or performant but certainly safer.
+
+The other solution would be to use Rc<>  in both containers.
+
+*/
+impl  Environment{
 	pub fn new()->Self{
-		let no_definitions :HashMap<String, SExpression> = HashMap::new();
-		let empty_lookup = Vec::new();
-		Environment{ definitions: no_definitions, lookup:empty_lookup}
+		let mut no_definitions :HashMap<String, usize> = HashMap::new();
+		let mut empty_symbol_table = Vec::new();
+		Environment{ definitions_by_symbol: no_definitions, definitions:empty_symbol_table}
 	}
 	
 	
 	// Shortcut to add symbols to the environment
-	fn define(mut self, name:String, value:SExpression)->Result<i32, String>{
-		if self.definitions.contains_key(&name){
+	pub fn define(mut self, name:String, value:SExpression)->Result<i32, String>{
+		if self.definitions_by_symbol.contains_key(&name){
 			Err(format!("{} already defined.", &name))
 		}else{
-			let number = self.definitions.keys().len();			
-			self.definitions.insert(name, value);			
-			//self.lookup.push(&value);
+			let number = self.definitions.len();
+			self.definitions_by_symbol.insert(name,number); 
+			self.definitions.push(value);
 			Ok(number as i32)
-			}
-		
-		
-		
+			}								
 	}
 	
+	pub fn get_definition_by_symbol(&self, s:String)-> Result<SExpression,String>{
+		match self.definitions_by_symbol.get(&s) {
+			Some(number) => {				
+				Ok(self.definitions[*number].clone())
+			},
+			_ => Err(format!("Symbol {} not defined.",&s))
+		}											
+	}
 	
-
-
 
 	fn add(&self, list:List)->Result<SExpression,String>{			
 		self.add_to(Cell::Int(0), list)
@@ -224,11 +259,8 @@ impl <'a> Environment <'a>{
 					// lookup in a vector of definitions for better performance...
 					// but the hash map gets us started.
 					Cell::Symbol(number, symbol)=> {
-						match self.definitions.get(&symbol) {
-							Some(expr) => Ok(expr.clone()),
-							_ => Err(format!("Symbol {} not defined.",&symbol))
-						}
-											
+						self.get_definition_by_symbol(symbol)
+						
 					},
 					_ => Ok(SExpression::Cell(c)),
 				},
