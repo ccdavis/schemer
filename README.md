@@ -16,8 +16,9 @@ The s-expression evaluation takes place in an environment but without implementi
 
 ### In Progress
 
-* Implement some special forms. First up is 'define'.
+* Lambdas
 * Make the environment scoped
+* Special commands for the REPL (exit), (env)
 
 ## To Do
 
