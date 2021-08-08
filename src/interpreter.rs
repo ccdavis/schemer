@@ -56,7 +56,7 @@ impl  Environment{
 	
 	
 	// Shortcut to add symbols to the environment
-	pub fn define(mut self, name:String, value:SExpression)->Result<i32, String>{
+	pub fn define(&mut self, name:String, value:SExpression)->Result<i32, String>{
 		if self.definitions_by_symbol.contains_key(&name){
 			Err(format!("{} already defined.", &name))
 		}else{
@@ -77,12 +77,12 @@ impl  Environment{
 	}
 	
 
-	fn add(&self, list:List)->Result<SExpression,String>{			
+	fn add(&mut self, list:List)->Result<SExpression,String>{			
 		self.add_to(Cell::Int(0), list)
 	}
 	
-	fn add_to(&self, left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(&self){
+	fn add_to(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -108,12 +108,12 @@ impl  Environment{
 	}
 
 
-	fn subtract(&self, list:List)->Result<SExpression,String>{			
+	fn subtract(&mut self, list:List)->Result<SExpression,String>{			
 		self.subtract_from(Cell::Int(0), list)
 	}
 	
-	fn subtract_from(&self, left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(&self){
+	fn subtract_from(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -140,12 +140,12 @@ impl  Environment{
 
 
 
-	fn multiply(&self, list:List)->Result<SExpression,String>{			
+	fn multiply(&mut self, list:List)->Result<SExpression,String>{			
 		self.multiply_by(Cell::Int(1), list)
 	}
 	
-	fn multiply_by(&self, left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(&self){
+	fn multiply_by(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -171,20 +171,20 @@ impl  Environment{
 
 
 
-	fn divide(&self, list:List)->Result<SExpression,String>{			
+	fn divide(&mut self, list:List)->Result<SExpression,String>{			
 		// If there's only one argument to /
 		if list.rest().is_empty(){
 			self.divide_into(Cell::Int(1), list)		
 		}else{
-			match list.first().eval_as_number(&self){
+			match list.first().eval_as_number(self){
 				Ok(numerator) => self.divide_into(numerator, list.rest()),
 				Err(message) => Err(message),
 			} // match				
 		} // else
 	}
 	
-	fn divide_into(&self, numerator_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(&self){
+	fn divide_into(&mut self, numerator_value:Cell, list:List)-> Result<SExpression, String>{		
+		match list.first().eval_as_number(self){
 			Err(message)=>{
 				Err(message)
 			},
@@ -208,12 +208,12 @@ impl  Environment{
 		} // match					
 	}
 	
-	fn eval_greater(&self, list:List)->Result<SExpression,String>{
+	fn eval_greater(&mut self, list:List)->Result<SExpression,String>{
 		if list.rest().is_empty(){
 			return Ok(SExpression::Cell(Cell::Bool(true)));
 		}
-		let left  = list.first().eval_as_number(&self);
-		let right = list.rest().first().eval_as_number(&self);
+		let left  = list.first().eval_as_number(self);
+		let right = list.rest().first().eval_as_number(self);
 		
 		let gt = match (left.unwrap(),right.unwrap()) {
 			(Cell::Int(i),Cell::Int(j)) => i > j,
@@ -230,8 +230,8 @@ impl  Environment{
 		}	
 	}	
 	
-	fn eval_or(&self, list:List)->Result<SExpression, String>{
-		let bool_value  = list.first().eval_as_rust_bool(&self);
+	fn eval_or(&mut self, list:List)->Result<SExpression, String>{
+		let bool_value  = list.first().eval_as_rust_bool(self);
 		match bool_value {
 			Ok(truth)=>{
 				if truth { 
@@ -251,7 +251,7 @@ impl  Environment{
 
 		
 	// Evaluate any  S-Expression
-	pub fn evaluate(&self, exp:SExpression)-> Result<SExpression,String>{
+	pub fn evaluate(&mut self, exp:SExpression)-> Result<SExpression,String>{
 		match exp{
 			SExpression::Cell(c)=>
 				match c {														
@@ -264,20 +264,36 @@ impl  Environment{
 					},
 					_ => Ok(SExpression::Cell(c)),
 				},
-			SExpression::List(list)=> list.evaluate(&self),
+			SExpression::List(list)=> list.evaluate(self),
 			SExpression::Null => Ok(exp)
 				
 		}
 	}
 		
 		
-	pub fn apply_special_form(&self, func:SpecialForm, args:List)->Result<SExpression,String>{
+	pub fn apply_special_form(&mut self, func:SpecialForm, args:List)->Result<SExpression,String>{
 		match func {
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();
-				println!("Would define {} as {}", new_symbol.print(), value_for_symbol.print());
-				Ok(*new_symbol)								
+				match *new_symbol.clone(){
+				// If it's a cell, it must be a symbol Cell::Symbol
+					SExpression::Cell(cell)=>
+						match cell{
+							Cell::Symbol(number, name)=>{								
+								self.define(name, *value_for_symbol);								
+								Ok(*new_symbol.clone())								
+							},
+							_=> Err(format!("Cannot re-define {}",&cell.print())),
+						},										
+					// If it's a list it must be the first part of a lambda
+					SExpression::List(list)=>Err(format!("Function definition not yet supported!")),
+													
+					// otherwise fail
+					_=>Err(format!("Cannot apply special form treatment to {}",new_symbol.print())),
+										
+				}
+											
 			},
 			_ => Err(format!("Special form {} not implemented!", "not printable").to_string())
 		}
@@ -286,7 +302,7 @@ impl  Environment{
 	
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:
-	pub fn apply_operator(&self, func:NumericOperator, list:List)-> Result<SExpression, String>{		
+	pub fn apply_operator(&mut self, func:NumericOperator, list:List)-> Result<SExpression, String>{		
 		// The cdr (now list) must have at least two items
 		if list.is_empty(){
 			return Err(String::from("Operator ") + func.print() + " requires two arguments");			
@@ -310,7 +326,7 @@ impl  Environment{
 	
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:
-	pub fn apply_logical_operator(&self, func:LogicalOperator, list:List)-> Result<SExpression, String>{		
+	pub fn apply_logical_operator(&mut self, func:LogicalOperator, list:List)-> Result<SExpression, String>{		
 		// The cdr (now list) must have at least two items
 		if list.is_empty(){
 			return Err(String::from("Operator ") + func.print() + " requires two arguments");			

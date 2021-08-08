@@ -93,7 +93,7 @@ impl List{
 	}	
 	
 	
-		pub fn evaluate(&self, envr:&Environment)-> Result<SExpression,String>{
+		pub fn evaluate(&self, envr:&mut Environment)-> Result<SExpression,String>{
 			let car = self.first();		
 			
 			// A list with a first cell of an operator or user-defined function

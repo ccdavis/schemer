@@ -28,6 +28,14 @@ pub enum LogicalOperator{
 }
 
 impl NumericOperator{
+
+	// Defining print() to give the lexeme for the token  (Add == '+' for instance): This 
+	// is something That would take just as much code implementing the display trait. And,
+	// I want to still have the option to use to_string() to give the debug name ('Add' for
+	// the Add token for example.)
+	//
+	// Strum macros offers a way to convert enums to strings, but again I want to have different
+	// varient  names in the source from the token representation in the target language.
 	pub fn print(self)->&'static str{
 		match self{
 			NumericOperator::Add=>"+",
@@ -70,6 +78,34 @@ pub enum SpecialForm{
 	List,
 	Car,
 	Cdr,
+	
+	Env,
+	Exit,
+	Input,
+	Output,		
+}
+
+impl SpecialForm{
+	fn print(self)->&'static str{
+		match self{
+			SpecialForm::Define=>"define",
+			SpecialForm::Let=>"let",
+			SpecialForm::SetCar=>"setcar!",
+			SpecialForm::Cond=>"cond",
+			SpecialForm::If=>"if",
+			SpecialForm::Map=>"map",
+			SpecialForm::Filter=>"filter",
+			SpecialForm::Count=>"count",
+			SpecialForm::Cons=>"cons",
+			SpecialForm::List=>"list",
+			SpecialForm::Car=>"car",
+			SpecialForm::Cdr=>"cdr",
+			SpecialForm::Env=>"env",
+			SpecialForm::Exit=>"exit",
+			SpecialForm::Input=>"input",
+			SpecialForm::Output=>"output",			
+		}
+	}
 }
 
 
@@ -134,17 +170,22 @@ impl Cell{
 
 	// This is a helper for the parser
 	pub fn map_cell_from_string() -> HashMap<String, Cell>{
-		let mut cells:HashMap<String,Cell> = HashMap::new();		
+		let mut tokens:HashMap<String,Cell> = HashMap::new();		
 		for numeric_op in NumericOperator::iter(){
 			let c = Cell::Op(numeric_op);			
-			cells.insert(String::from(numeric_op.print()), c);			
+			tokens.insert(String::from(numeric_op.print()), c);			
 		}
 		
 		for boolean_op in LogicalOperator::iter(){
 			let c = Cell::Logical(boolean_op);			
-			cells.insert(String::from(boolean_op.print()), c);			
+			tokens.insert(String::from(boolean_op.print()), c);			
+		}
+		
+		for form in SpecialForm::iter(){
+			let c = Cell::Special(form);			
+			tokens.insert(String::from(form.print()), c);
 		}
 			
-		cells
+		tokens
 	}
 		

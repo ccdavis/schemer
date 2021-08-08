@@ -18,7 +18,7 @@ pub enum ParseError {
 
 
 pub fn lex(expression: String) -> Vec<String> {
-// Ensure { and } are surrounded by whitespace, then
+// Ensure ( and ) are surrounded by whitespace, then
 // organize items into strings
   expression
 	.replace("(", " ( ")
@@ -30,15 +30,13 @@ pub fn lex(expression: String) -> Vec<String> {
 
 
 pub struct Parser{
-	op_lookup:HashMap<String, Cell>,	
-	
-
+	reserved_symbol_lookup:HashMap<String, Cell>,	
 }
 
 impl Parser{
 
 	pub fn new()->Self{
-		Self{ op_lookup:map_cell_from_string()}
+		Self{ reserved_symbol_lookup:map_cell_from_string()}
 	}
 
 	pub fn parse<'a>(&self, tokens: &'a [String]) -> Result<(SExpression, &'a [String]), ParseError> {				
@@ -73,9 +71,9 @@ impl Parser{
 	fn parse_cell(&self, token: &str) -> SExpression{
 		// This first block should handle (eventually) all built in symbols
 		println!("TOKEN : '{}' ", token);
-		if self.op_lookup.contains_key(token){
-			let op = self.op_lookup.get(token).unwrap();
-			println!("Identified operator: '{}' ", op.print());
+		if self.reserved_symbol_lookup.contains_key(token){
+			let op = self.reserved_symbol_lookup.get(token).unwrap();
+			println!("Identified reserved word: '{}' ", op.print());
 			SExpression::Cell(op.clone())		
 		}else{
 			// This block will handle all primitive literals and symbols
