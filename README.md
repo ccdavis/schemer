@@ -10,7 +10,7 @@ What exists so far is a core interpreter that can evaluate s-expressions and app
 
 Some code in "main.rs" shows how one could build tests for language constructs. Just use the __cons()__ function and construct lists of cell values. No need for a tokenizer or REPLat this level.
 
-There's a basic parser and tokenizer now. Some tests in main take text and parse and interpret it.
+There's a basic parser and tokenizer now. Some tests in main take text and parse and interpret it. The app will start up in a REPL mode.
 
 The s-expression evaluation takes place in an environment but without implementing 'define' or 'let' it doesn't change any behavior.
 
