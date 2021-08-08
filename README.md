@@ -21,7 +21,8 @@ The s-expression evaluation takes place in an environment but without implementi
 
 ## To Do
 
-* Add a REPL
+* Debug 'define'
+* Implement lambdas
 * Replace the current primitive lexer / tokenizer with something better
 * Better error handling: Right now I just use Result<SExpression,&str> to pass back error messages.
 

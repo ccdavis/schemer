@@ -281,7 +281,9 @@ impl  Environment{
 					SExpression::Cell(cell)=>
 						match cell{
 							Cell::Symbol(number, name)=>{								
+								println!("Defined {} ",&name);
 								self.define(name, *value_for_symbol);								
+								
 								Ok(*new_symbol.clone())								
 							},
 							_=> Err(format!("Cannot re-define {}",&cell.print())),
