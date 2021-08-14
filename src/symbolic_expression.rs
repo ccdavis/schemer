@@ -24,9 +24,16 @@ impl SExpression{
 		}		
 	}
 
-	fn as_number(self)->Result<Cell,String> {
+	pub fn as_number(self)->Result<Cell,String> {
 		match self{
-			SExpression::Cell( cell)=>Ok(cell),
+			SExpression::Cell( cell)=>{
+				match cell{
+					Cell::Int(_)=>Ok(cell),
+					Cell::Flt(_)=>Ok(cell),
+					_=>Err(format!("Not a number type: {}",cell.print())),
+					
+				}
+			},
 			_=>Err(String::from("Not a number type")),
 		}
 
