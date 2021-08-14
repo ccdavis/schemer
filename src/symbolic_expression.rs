@@ -23,6 +23,14 @@ impl SExpression{
 			SExpression::Null => String::from("Null"),
 		}		
 	}
+
+	fn as_number(self)->Result<Cell,String> {
+		match self{
+			SExpression::Cell( cell)=>Ok(cell),
+			_=>Err(String::from("Not a number type")),
+		}
+
+	}
 	
 	pub fn eval_as_bool(self, envr:&mut Environment) -> Result<Cell,String>{
 		match self{
