@@ -259,6 +259,7 @@ impl  Environment{
 					// lookup in a vector of definitions for better performance...
 					// but the hash map gets us started.
 					Cell::Symbol(number, symbol)=> {
+						println!("Try to evaluate symbol {}",&symbol);
 						self.get_definition_by_symbol(symbol)
 						
 					},
