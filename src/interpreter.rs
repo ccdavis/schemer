@@ -75,7 +75,7 @@ impl  Environment{
 			_ => Err(format!("Symbol {} not defined.",&s))
 		}											
 	}
-	
+	// extract  the cell version of an s-expression if it's a number type cell
 	fn checked_number(item:Result<SExpression,String>)->Result<Cell,String>{
 		match item{
 			Ok(item)=>item.as_number(),
@@ -83,7 +83,13 @@ impl  Environment{
 		}
 	}
 	
-
+	fn checked_rust_bool(item:Result<SExpression,String>)->Result<bool,String>{
+		match item{
+			Ok(item)=>item.as_rust_bool(),
+			Err(message)=>Err(message),
+		}
+	}
+	
 	fn add(&mut self, list:List)->Result<SExpression,String>{			
 		self.add_to(Cell::Int(0), list)
 	}
@@ -120,7 +126,8 @@ impl  Environment{
 	}
 	
 	fn subtract_from(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(self){
+		let next_item = self.evaluate(*list.first());
+		match Environment::checked_number(next_item){
 			Err(message)=>{
 				Err(message)
 			},
@@ -152,7 +159,8 @@ impl  Environment{
 	}
 	
 	fn multiply_by(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(self){
+		let next_item = self.evaluate(*list.first());
+		match Environment::checked_number(next_item){
 			Err(message)=>{
 				Err(message)
 			},
@@ -183,7 +191,8 @@ impl  Environment{
 		if list.rest().is_empty(){
 			self.divide_into(Cell::Int(1), list)		
 		}else{
-			match list.first().eval_as_number(self){
+			let next_item = self.evaluate(*list.first());
+			match Environment::checked_number(next_item){
 				Ok(numerator) => self.divide_into(numerator, list.rest()),
 				Err(message) => Err(message),
 			} // match				
@@ -191,7 +200,8 @@ impl  Environment{
 	}
 	
 	fn divide_into(&mut self, numerator_value:Cell, list:List)-> Result<SExpression, String>{		
-		match list.first().eval_as_number(self){
+		let next_item = self.evaluate(*list.first());
+		match Environment::checked_number(next_item){
 			Err(message)=>{
 				Err(message)
 			},
@@ -219,8 +229,8 @@ impl  Environment{
 		if list.rest().is_empty(){
 			return Ok(SExpression::Cell(Cell::Bool(true)));
 		}
-		let left  = list.first().eval_as_number(self);
-		let right = list.rest().first().eval_as_number(self);
+		let left  = Environment::checked_number(self.evaluate(*list.first()));
+		let right = Environment::checked_number(self.evaluate(*list.rest().first()));
 		
 		let gt = match (left.unwrap(),right.unwrap()) {
 			(Cell::Int(i),Cell::Int(j)) => i > j,
@@ -238,7 +248,7 @@ impl  Environment{
 	}	
 	
 	fn eval_or(&mut self, list:List)->Result<SExpression, String>{
-		let bool_value  = list.first().eval_as_rust_bool(self);
+		let bool_value  = Environment::checked_rust_bool(self.evaluate(*list.first()));
 		match bool_value {
 			Ok(truth)=>{
 				if truth { 
