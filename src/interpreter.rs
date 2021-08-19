@@ -298,20 +298,21 @@ impl  Environment{
 				// If it's a cell, it must be a symbol Cell::Symbol
 					SExpression::Cell(cell)=>
 						match cell{
-							Cell::Symbol(number, name)=>{								
-								println!("Defined {} ",&name);
-								self.define(name, *value_for_symbol);								
-								
-								Ok(*new_symbol.clone())								
-							},
+							Cell::Symbol(number, name)=>																								
+								match self.define(name, *value_for_symbol){
+									Ok(index) =>{
+										// TODO Also update all symbols with this number
+										Ok(*new_symbol.clone())								
+									},
+									Err(e)=>Err(e),
+								},							
 							_=> Err(format!("Cannot re-define {}",&cell.print())),
 						},										
-					// If it's a list it must be the first part of a lambda
-					SExpression::List(list)=>Err(format!("Function definition not yet supported!")),
-													
-					// otherwise fail
-					_=>Err(format!("Cannot apply special form treatment to {}",new_symbol.print())),
 										
+					// If it's a list it must be the first part of a lambda
+					SExpression::List(list)=>Err(format!("Function definition not yet supported!")),												
+					// otherwise fail
+					_=>Err(format!("Cannot apply special form treatment to {}",new_symbol.print())),										
 				}
 											
 			},
