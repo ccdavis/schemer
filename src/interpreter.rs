@@ -310,8 +310,29 @@ impl  Environment{
 						},										
 										
 					// If it's a list it must be the first part of a lambda
-					SExpression::List(list)=>Err(format!("Function definition not yet supported!")),												
-					// otherwise fail
+					// Split into arguments and body and type-check.
+					SExpression::List(function_signature)=>{
+						let parameter_names = function_signature.rest();												
+						match *function_signature.first(){
+							SExpression::Cell(n)=>
+								match n{ // This *should* be the name of the function
+									Cell::Symbol(number,name)=>{
+										let params = Box::new(SExpression::List(parameter_names));
+										let body = Box::new(*value_for_symbol);
+										let value = SExpression::Cell(Cell::Lambda(params, body));													
+										match self.define(name, value){
+											Ok(index) =>{
+										// TODO Also update all symbols with this number
+												Ok(*new_symbol.clone())								
+											},
+											Err(e)=>Err(e),
+										}							
+									},
+									_ => Err(format!("Invalid function name: {}", &n.print())),
+								},
+							_ => Err(format!("Invalid function name: {}",&function_signature.first().print())),
+						}																							
+					},
 					_=>Err(format!("Cannot apply special form treatment to {}",new_symbol.print())),										
 				}
 											
