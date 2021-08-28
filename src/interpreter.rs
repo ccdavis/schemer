@@ -277,8 +277,7 @@ impl  Environment{
 					// but the hash map gets us started.
 					Cell::Symbol(number, symbol)=> {
 						println!("Try to evaluate symbol {}",&symbol);
-						self.get_definition_by_symbol(symbol)
-						
+						self.get_definition_by_symbol(symbol)						
 					},
 					_ => Ok(SExpression::Cell(c)),
 				},
@@ -339,6 +338,30 @@ impl  Environment{
 			},
 			_ => Err(format!("Special form {} not implemented!", "not printable").to_string())
 		}
+	}
+	
+	
+	fn apply_function(&mut self, number:i32, name:String, args:List)->Result<SExpression, String>{
+		println!("Try to evaluate symbol as function call{}",&name);
+		match self.get_definition_by_symbol(symbol){
+			SExpression(cell)=>{
+				match cell{
+					Cell::Lambda(params,body)=>{
+						// match the params to the args
+						// then evaluate the body in the
+						// new environment:
+						let function_result = SExpression(Cell::Int(5)); // place-holder
+						
+						Ok(function_result)
+						
+					},
+					_=>Err(format!("Symbol {} not bound to a lambda!",&name)),
+				}
+			},
+			SExpression(list)=> Err(format!("The list {} defined as {}  can't be used as a function.",&list.print(),&name)),		
+			_ => Err(format!("Unknown function: {}",&name)),
+		}
+		
 	}
 	
 	
