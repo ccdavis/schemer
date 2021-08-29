@@ -12,20 +12,20 @@ Some code in "main.rs" shows how one could build tests for language constructs. 
 
 There's a basic parser and tokenizer now. Some tests in main take text and parse and interpret it. The app will start up in a REPL mode.
 
-The s-expression evaluation takes place in an environment but without implementing 'define' or 'let' it doesn't change any behavior.
+S-Expression evaluation takes place in an environment. The 'define' special form adds to the environment. Basic variables work; lambdas are not yet working.
 
 ### In Progress
 
-* Lambdas
+* Lambdas 
 * Make the environment scoped
 * Special commands for the REPL (exit), (env)
 
 ## To Do
 
-* Debug 'define'
+* Replace some of the deeply nested 'match' usage with more idiomatic Rust using closures and 'if let ... = ...{}'
 * Implement lambdas
 * Replace the current primitive lexer / tokenizer with something better
-* Better error handling: Right now I just use Result<SExpression,&str> to pass back error messages.
+* Better error handling: Right now I just use Result<SExpression,String> to pass back error messages.
 
 
 

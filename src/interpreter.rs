@@ -275,6 +275,11 @@ impl  Environment{
 					// The idea is to  use the number instead of the name to do
 					// lookup in a vector of definitions for better performance...
 					// but the hash map gets us started.
+					//
+					// In the context where this is evaluated the symbol can only
+					// refer to a variable; functions would be the first element
+					// of a list which gets evaluated in the List::evaluate9)
+					// function.
 					Cell::Symbol(number, symbol)=> {
 						println!("Try to evaluate symbol {}",&symbol);
 						self.get_definition_by_symbol(symbol)						
@@ -341,27 +346,20 @@ impl  Environment{
 	}
 	
 	
-	fn apply_function(&mut self, number:i32, name:String, args:List)->Result<SExpression, String>{
+	pub fn apply_function(&mut self, number:i32, name:String, args:List)->Result<SExpression, String>{
 		println!("Try to evaluate symbol as function call{}",&name);
-		match self.get_definition_by_symbol(symbol){
-			SExpression(cell)=>{
-				match cell{
-					Cell::Lambda(params,body)=>{
-						// match the params to the args
-						// then evaluate the body in the
-						// new environment:
-						let function_result = SExpression(Cell::Int(5)); // place-holder
+		let func = self.get_definition_by_symbol(name)?;		
+		if let SExpression::Cell(Cell::Lambda(params,body)) = func{
+			// match the params to the args
+			// then evaluate the body in the
+			// new environment:
 						
-						Ok(function_result)
-						
-					},
-					_=>Err(format!("Symbol {} not bound to a lambda!",&name)),
-				}
-			},
-			SExpression(list)=> Err(format!("The list {} defined as {}  can't be used as a function.",&list.print(),&name)),		
-			_ => Err(format!("Unknown function: {}",&name)),
+			let function_result = SExpression::Cell(Cell::Int(5)); // place-holder
+			Ok(function_result)
+		}else{
+			Err(format!("Can't evaluate as function: {}",&func.print()))
 		}
-		
+
 	}
 	
 	
