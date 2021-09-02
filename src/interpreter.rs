@@ -10,9 +10,11 @@ use crate::list::List;
 // Built in simple functions
 use std::collections::HashMap;
 // Results of 'define' go here
-pub struct Environment{
+#[derive(Clone)]
+pub struct Environment<'a>{
 	pub definitions_by_symbol:HashMap<String, usize>,	
-	definitions:Vec<SExpression>
+	definitions:Vec<SExpression>,
+	parent:Option<&'a Environment<'a>>,
 }
 
 
@@ -47,13 +49,37 @@ to the same data. It feels a bit less direct or performant but certainly safer.
 The other solution would be to use Rc<>  in both containers.
 
 */
-impl  Environment{
+
+	pub fn extend_environment<'a>(env:&'a mut Environment)->Environment<'a>{
+		let mut no_definitions :HashMap<String, usize> = HashMap::new();
+		let mut empty_symbol_table = Vec::new();
+		Environment{ 
+			parent : Some(env), 
+			definitions_by_symbol: no_definitions, 
+			definitions:empty_symbol_table}		
+	}
+	
+
+impl  Environment <'_>{
 	pub fn new()->Self{
 		let mut no_definitions :HashMap<String, usize> = HashMap::new();
 		let mut empty_symbol_table = Vec::new();
-		Environment{ definitions_by_symbol: no_definitions, definitions:empty_symbol_table}
+		Environment{ 
+			parent : None, 
+			definitions_by_symbol: no_definitions, 
+			definitions:empty_symbol_table}
 	}
 	
+
+	pub fn make_child<'a>(&'a mut self)->Environment<'a>{
+		let mut no_definitions :HashMap<String, usize> = HashMap::new();
+		let mut empty_symbol_table = Vec::new();
+		Environment{ 
+			parent : Some(self), 
+			definitions_by_symbol: no_definitions, 
+			definitions:empty_symbol_table}		
+	}
+		
 	
 	// Shortcut to add symbols to the environment
 	pub fn define(&mut self, name:String, value:SExpression)->Result<i32, String>{
@@ -345,17 +371,71 @@ impl  Environment{
 		}
 	}
 	
+	// Instead of evaluating the list as a whole, evaluate each s-expression
+	// in the list and return a list of each of those evaluation results.
+	fn eval_each(&mut self, args:List)->Result< Vec<SExpression>, String>{
+		let mut eval_results:Vec<SExpression> = Vec::new();
+		let mut remaining_args = args.clone();
+		while !remaining_args.is_empty(){
+			let car = remaining_args.first();
+			let result = self.evaluate(*car);
+			match result{
+				Ok(value)=> eval_results.push(value),
+				Err(e)=> return Err(e)
+			}			
+			remaining_args = remaining_args.rest();
+		}
+		
+		Ok(eval_results)
+	}
 	
+	// Assign all values to names in args
+	fn define_all(&mut self, params:SExpression, values:Vec<SExpression>){
+		let param_names = match params{
+			SExpression::List(names)=>names,
+			_=> panic!("Invalid parameter list {:?}",params.print()),
+		};
+		
+		let mut remaining_names = param_names.clone();
+		let mut arg_num = 0;
+		while !param_names.is_empty(){
+			let name = param_names.first();
+			if arg_num+1 > values.len(){
+				panic!("Mismatch between number of arguments and function parameters!");
+			}
+			let value = values[arg_num].clone();			
+			match *name{
+				SExpression::Cell(Cell::Symbol(_,n))=>self.define(n,value),
+				_=>panic!("A parameter name must be a symbol but you used {}",&*name.print()),
+			};
+			arg_num+=1;
+		}				
+	}
+		
 	pub fn apply_function(&mut self, number:i32, name:String, args:List)->Result<SExpression, String>{
 		println!("Try to evaluate symbol as function call{}",&name);
 		let func = self.get_definition_by_symbol(name)?;		
 		if let SExpression::Cell(Cell::Lambda(params,body)) = func{
 			// match the params to the args
 			// then evaluate the body in the
-			// new environment:
-						
-			let function_result = SExpression::Cell(Cell::Int(5)); // place-holder
-			Ok(function_result)
+			// new environment:			
+			
+			// Evaluate the arguments in the current context
+			let evaluated_args = self.eval_each(args);
+				
+			
+			match evaluated_args{
+				Ok(values)=>{
+					// Make a new environment with the current one as the parent
+					let mut local_env = self.make_child();
+					
+					// Add all evaluated args to the child env with the 'params' names
+					// according to order in the function call:
+					local_env.define_all(*params,values);
+					local_env.evaluate(*body)												
+				},
+				Err(e)=>Err(e)
+			}
 		}else{
 			Err(format!("Can't evaluate as function: {}",&func.print()))
 		}
