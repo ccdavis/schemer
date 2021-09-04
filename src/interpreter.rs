@@ -61,6 +61,17 @@ The other solution would be to use Rc<>  in both containers.
 	
 
 impl  Environment <'_>{
+
+	// A formatted list of all defined symbols in the environment (not including parent)
+	pub fn print(&self)->String{
+		let mut symbols = Vec::new();
+		for (symbol, number) in &self.definitions_by_symbol{
+			let expr = self.definitions[*number].clone();
+			symbols.push(format!("{} : {} {}", &symbol, number, &expr.print()));			
+		}
+		symbols.join("\n")
+	}
+		
 	pub fn new()->Self{
 		let mut no_definitions :HashMap<String, usize> = HashMap::new();
 		let mut empty_symbol_table = Vec::new();
@@ -398,22 +409,24 @@ impl  Environment <'_>{
 		
 		let mut remaining_names = param_names.clone();
 		let mut arg_num = 0;
-		while !param_names.is_empty(){
-			let name = param_names.first();
+		while !remaining_names.is_empty(){
+			let name = remaining_names.first();
 			if arg_num+1 > values.len(){
 				panic!("Mismatch between number of arguments and function parameters!");
 			}
 			let value = values[arg_num].clone();			
+			//println!("Define {} as {}",&name, &value.print());
 			match *name{
 				SExpression::Cell(Cell::Symbol(_,n))=>self.define(n,value),
 				_=>panic!("A parameter name must be a symbol but you used {}",&*name.print()),
 			};
 			arg_num+=1;
+			remaining_names = remaining_names.rest();
 		}				
 	}
 		
 	pub fn apply_function(&mut self, number:i32, name:String, args:List)->Result<SExpression, String>{
-		println!("Try to evaluate symbol as function call{}",&name);
+		println!("Try to evaluate symbol '{}' as function call",&name);
 		let func = self.get_definition_by_symbol(name)?;		
 		if let SExpression::Cell(Cell::Lambda(params,body)) = func{
 			// match the params to the args
@@ -422,16 +435,16 @@ impl  Environment <'_>{
 			
 			// Evaluate the arguments in the current context
 			let evaluated_args = self.eval_each(args);
-				
-			
+							
 			match evaluated_args{
-				Ok(values)=>{
+				Ok(values)=>{ // all evaluations were successful
 					// Make a new environment with the current one as the parent
 					let mut local_env = self.make_child();
 					
 					// Add all evaluated args to the child env with the 'params' names
 					// according to order in the function call:
 					local_env.define_all(*params,values);
+					println!("Created child env\n {}",&local_env.print());
 					local_env.evaluate(*body)												
 				},
 				Err(e)=>Err(e)
