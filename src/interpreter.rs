@@ -106,10 +106,14 @@ impl  Environment <'_>{
 	
 	pub fn get_definition_by_symbol(&self, s:String)-> Result<SExpression,String>{
 		match self.definitions_by_symbol.get(&s) {
-			Some(number) => {				
-				Ok(self.definitions[*number].clone())
+			Some(number) => Ok(self.definitions[*number].clone()),			
+			_ => {
+				if let Some(outer) = self.parent{
+					outer.get_definition_by_symbol(s)
+				}else{
+					Err(format!("Symbol {} not defined.",&s))
+				}
 			},
-			_ => Err(format!("Symbol {} not defined.",&s))
 		}											
 	}
 	// extract  the cell version of an s-expression if it's a number type cell
