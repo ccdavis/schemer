@@ -336,6 +336,7 @@ impl  Environment <'_>{
 		
 	pub fn apply_special_form(&mut self, func:SpecialForm, args:List)->Result<SExpression,String>{
 		match func {
+			SpecialForm::If=> self.evaluate_if(args),		
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();
@@ -384,6 +385,26 @@ impl  Environment <'_>{
 			},
 			_ => Err(format!("Special form {} not implemented!", "not printable").to_string())
 		}
+	}
+	
+	// Requires three arguments: 'if' must have a test expression and both outcomes of the test.
+	fn evaluate_if(&mut self, clauses:List)->Result<SExpression,String>{
+		if clauses.is_empty(){
+			return Err(format!("if expression has three parts."));
+		}
+		
+		let truth_test = Environment::checked_rust_bool(self.evaluate(*clauses.first()));				
+		match truth_test{ 
+			Ok(test_result)=>{
+				if test_result{ // evaluate if branch
+					self.evaluate(*clauses.rest().first())
+				}else{ // evaluate 'else' branch
+					self.evaluate(*clauses.rest().rest().first())
+				}
+			},
+			Err(e)=>return Err(format!("The test expression for 'if' must be true or false: {}",e)),
+		}
+							
 	}
 	
 	// Instead of evaluating the list as a whole, evaluate each s-expression
