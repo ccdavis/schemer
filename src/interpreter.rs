@@ -163,17 +163,19 @@ impl  Environment <'_>{
 
 
 	fn subtract(&mut self, list:List)->Result<SExpression,String>{			
-		self.subtract_from(Cell::Int(0), list)
+		let first_item = self.evaluate(*list.first());
+		match Environment::checked_number(first_item){
+			Ok(leftmost_number)=>self.subtract_from(leftmost_number, list.rest()),
+			Err(e)=>Err(e),
+		}
+		
 	}
 	
 	fn subtract_from(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
 		let next_item = self.evaluate(*list.first());
 		match Environment::checked_number(next_item){
-			Err(message)=>{
-				Err(message)
-			},
-			Ok(right_value) =>{			
-				
+			Err(message)=>Err(message),		
+			Ok(right_value) =>{							
 				let partial_sum = match (left_value, right_value) {			
 					(Cell::Int(l),Cell::Int(r)) => Cell::Int(l - r),
 					(Cell::Int(l), Cell::Flt(r)) => Cell::Flt(l as f64 - r),
