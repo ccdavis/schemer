@@ -411,14 +411,19 @@ impl  Environment <'_>{
 	
 	// Instead of evaluating the list as a whole, evaluate each s-expression
 	// in the list and return a list of each of those evaluation results.
-	fn eval_each(&mut self, args:List)->Result< Vec<SExpression>, String>{
+	pub fn eval_each(&mut self, args:List)->Result< Vec<SExpression>, String>{
 		let mut eval_results:Vec<SExpression> = Vec::new();
 		let mut remaining_args = args.clone();
+		println!("In eval_each!");
 		while !remaining_args.is_empty(){
+			println!("In eval_each with args: {}",&remaining_args.print());
 			let car = remaining_args.first();
 			let result = self.evaluate(*car);
 			match result{
-				Ok(value)=> eval_results.push(value),
+				Ok(value)=> {
+				println!("In eval_each: {}",&value.print());
+				eval_results.push(value)
+				},
 				Err(e)=> return Err(e)
 			}			
 			remaining_args = remaining_args.rest();

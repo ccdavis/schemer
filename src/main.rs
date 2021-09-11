@@ -5,6 +5,7 @@ mod symbolic_expression;
 mod parser;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
+use std::fs;
 
 use crate::primitives::Cell;
 use crate::list::List;
@@ -38,6 +39,43 @@ fn interpret(program:String, environment:&mut interpreter::Environment)->String{
 		}
 	}
 }
+
+
+
+
+fn interpret_top_level(program:String, environment:&mut interpreter::Environment)->String{
+	let mut main_program:String  = String::from("(") + &program + ")";
+	let tokens = parser::lex(main_program);
+	let p = parser::Parser::new();
+	
+	match p.parse(&tokens){
+		Ok((valid_ast,_)) =>		
+			// Parser seemed to work, so attempt to interpret the AST
+			match valid_ast{
+				SExpression::List(list)=>
+					match environment.eval_each(list){
+						Ok(items)=>items.iter()
+							.map(|i| i.print())
+							.collect::<Vec<String>>()
+							.join("\n"),
+						Err(error)=>format!("Interpreter error {}",error),
+					},
+				_=>
+					match environment.evaluate(valid_ast){
+						Ok(ref result)=>result.print(),
+						Err(error)=>format!("Interpreter error {}",error),
+					},
+			},			
+		Err(error) =>{
+			// handle different types of errors
+			match error{
+				parser::ParseError::Reason(reason) =>format!("{}", reason),
+			}
+		}
+	}
+}
+
+
 
 
 // From the Rustyline README
@@ -113,7 +151,22 @@ fn run_tests(){
 }
 
 fn main() {
-	repl()
+	let args = std::env::args().collect::<Vec<String>>();
+	
+	if args.len()<2{
+		repl();
+	}else{
+		let program_file = &args[1];
+		let code = fs::read_to_string(program_file)
+			.expect(&format!("File at {} unreadable.",program_file));
+			
+		let mut envr = interpreter::Environment::new();
+		let results = interpret_top_level(code, &mut envr);
+		println!("=>  {}", &results);
+		
+		
+		
+	}
 	
 }
 	
