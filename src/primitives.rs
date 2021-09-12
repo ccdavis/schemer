@@ -5,6 +5,68 @@ use strum::IntoEnumIterator; // 0.17.1
 use strum_macros::EnumIter; // 0.17.1
 
 
+
+#[derive(Debug,Clone,Copy,EnumIter)]
+pub enum CoreFunc{
+// A subset of the "essential procedures" pertaining to type checking and conversion
+	IsChar,
+	IsNumber,
+	IsList,
+	IsNull,
+	IsBoolean,
+	IsExact,
+	IsString,
+	NumberToString,
+	StringToNumber,
+	SymbolToString,
+	StringToSymbol,
+	CharToNumber,
+	NumberToChar,
+	
+	// Essential functions for lists
+	Map,
+	Filter,
+	Count,
+	Cons,
+	List,
+	Car,
+	Cdr,
+	First,
+	Rest,
+	Append,
+	
+}
+
+impl CoreFunc{
+	pub fn print(self)->&'static str{
+		match self{
+			CoreFunc::IsChar=>"char?",
+			CoreFunc::IsNumber=>"number?",
+			CoreFunc::IsList=>"list?",
+			CoreFunc::IsNull=>"null?",
+			CoreFunc::IsBoolean=>"boolean?",
+			CoreFunc::IsString=>"string?",
+			CoreFunc::IsExact=>"exact?", // floats are inexact
+			CoreFunc::NumberToString=>"number->string",
+			CoreFunc::StringToNumber=>"string->number",
+			CoreFunc::SymbolToString=>"symbol->string",
+			CoreFunc::StringToSymbol=>"string->symbol",
+			CoreFunc::CharToNumber=>"char->number",
+			CoreFunc::NumberToChar=>"number->char",			
+			CoreFunc::Map=>"map",
+			CoreFunc::Filter=>"filter",
+			CoreFunc::Count=>"count",
+			CoreFunc::Cons=>"cons",
+			CoreFunc::List=>"list",
+			CoreFunc::Car=>"car",
+			CoreFunc::Cdr=>"cdr",
+			CoreFunc::First=>"first", // aliases for car and cdr
+			CoreFunc::Rest=>"rest",
+			CoreFunc::Append=>"append",
+		}	
+	}
+	
+} // impl corefunc
 #[derive(Debug,Clone,Copy,EnumIter)]
 pub enum NumericOperator{
 	Add,
@@ -12,6 +74,25 @@ pub enum NumericOperator{
 	Multiply,
 	Divide,
 	Modulo,
+	/*
+	Other Scheme built-in numeric procedures https://www.cs.cmu.edu/Groups/AI/html/r4rs/r4rs_8.html
+	Abs,
+	Min,
+	Max,
+	Quotient,
+	Remainder,
+	Numerator,
+	Denominator,
+	Gcd,
+	Lcm,
+	Floor,
+	Ceiling,
+	Truncate,
+	Round,
+	Rationalize,
+	Expt,
+	
+	*/
 }
 
 #[derive(Debug,Clone,Copy,EnumIter)]
@@ -69,16 +150,15 @@ pub enum SpecialForm{
 	Define,	
 	Let,
 	SetCar,
+	Set,
 	Cond,
 	If,
-	Map,
-	Filter,
-	Count,
-	Cons,
-	List,
-	Car,
-	Cdr,
-	
+	Do,
+	While,
+	When,
+	Unless,
+	Return,
+		
 	Env,
 	Exit,
 	Input,
@@ -91,15 +171,15 @@ impl SpecialForm{
 			SpecialForm::Define=>"define",
 			SpecialForm::Let=>"let",
 			SpecialForm::SetCar=>"setcar!",
+			SpecialForm::Set=>"set!",
 			SpecialForm::Cond=>"cond",
 			SpecialForm::If=>"if",
-			SpecialForm::Map=>"map",
-			SpecialForm::Filter=>"filter",
-			SpecialForm::Count=>"count",
-			SpecialForm::Cons=>"cons",
-			SpecialForm::List=>"list",
-			SpecialForm::Car=>"car",
-			SpecialForm::Cdr=>"cdr",
+			SpecialForm::Do=>"do",
+			SpecialForm::While=>"while",
+			SpecialForm::When=>"when",
+			SpecialForm::Unless=>"unless",
+			SpecialForm::Return=>"return",
+			
 			SpecialForm::Env=>"env",
 			SpecialForm::Exit=>"exit",
 			SpecialForm::Input=>"input",
@@ -119,6 +199,7 @@ pub enum Cell{
 	Op(NumericOperator),
 	Logical(LogicalOperator),
 	Special(SpecialForm),	 // other built-in functions
+	Core(CoreFunc),
 	Lambda(Box<SExpression>,Box<SExpression>), // arguments and body of the lambda
 }
 
@@ -136,6 +217,7 @@ impl Cell{
 			Cell::Op(operator) => String::from(format!("Numeric operator {}", operator.print())),
 			Cell::Logical(operator)=>String::from(format!("Logical operator{}", operator.print())),
 			Cell::Special(special_form)=> String::from("Special form"),			
+			Cell::Core(func)=>String::from("core-function"),
 			Cell::Lambda(_,_) => String::from("Lambda: ")
 		}		
 	}
@@ -171,6 +253,12 @@ impl Cell{
 	// This is a helper for the parser
 	pub fn map_cell_from_string() -> HashMap<String, Cell>{
 		let mut tokens:HashMap<String,Cell> = HashMap::new();		
+		
+		for func in CoreFunc::iter(){
+			let c = Cell::Core(func);			
+			tokens.insert(String::from(func.print()), c);			
+		}
+		
 		for numeric_op in NumericOperator::iter(){
 			let c = Cell::Op(numeric_op);			
 			tokens.insert(String::from(numeric_op.print()), c);			
