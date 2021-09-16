@@ -1,4 +1,4 @@
-
+use anyhow::{Context,Result};
 use crate::primitives::Cell;
 use crate::primitives::NumericOperator;
 use crate::primitives::LogicalOperator;
@@ -136,29 +136,25 @@ impl  Environment <'_>{
 	}
 	
 	fn add_to(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{				
-		let next_item = self.evaluate(*list.first());
-		match Environment::checked_number(next_item){
-			Err(message)=>{
-				Err(message)
+		let next_item = self.evaluate(*list.first())?;		
+		let right_value = next_item.as_number()?;	
+		let partial_sum = match (left_value, right_value) {			
+			(Cell::Int(l),Cell::Int(r)) => Cell::Int(l + r),
+			(Cell::Int(l), Cell::Flt(r)) => Cell::Flt(l as f64 + r),
+			(Cell::Flt(l), Cell::Int(r)) => Cell::Flt(l + r as f64),
+			(Cell::Flt(l), Cell::Flt(r)) => Cell::Flt(l + r),
+			_ => {				
+				// Type error:
+				panic!("Data type error. Type checking should have caught this earlier.");
 			},
-			Ok(right_value) =>{							
-				let partial_sum = match (left_value, right_value) {			
-					(Cell::Int(l),Cell::Int(r)) => Cell::Int(l + r),
-					(Cell::Int(l), Cell::Flt(r)) => Cell::Flt(l as f64 + r),
-					(Cell::Flt(l), Cell::Int(r)) => Cell::Flt(l + r as f64),
-					(Cell::Flt(l), Cell::Flt(r)) => Cell::Flt(l + r),
-					_ => {				
-						// Type error:
-						panic!("Data type error. Type checking should have caught this earlier.");
-					},
-				}; // match					
-				if list.rest().is_empty(){
-					Ok(SExpression::Cell(partial_sum))
-				}else{			
-					self.add_to(partial_sum, list.rest())		
-				}
-			} // Some(right_value)
-		} // match					
+		}; // match					
+		if list.rest().is_empty(){
+			Ok(SExpression::Cell(partial_sum))
+		}else{			
+			self.add_to(partial_sum, list.rest())		
+		}
+	
+
 	}
 
 
@@ -395,18 +391,18 @@ impl  Environment <'_>{
 			return Err(format!("if expression has three parts."));
 		}
 		
-		let truth_test = Environment::checked_rust_bool(self.evaluate(*clauses.first()));				
-		match truth_test{ 
-			Ok(test_result)=>{
-				if test_result{ // evaluate if branch
-					self.evaluate(*clauses.rest().first())
-				}else{ // evaluate 'else' branch
-					self.evaluate(*clauses.rest().rest().first())
-				}
-			},
-			Err(e)=>return Err(format!("The test expression for 'if' must be true or false: {}",e)),
+		let first_clause = *clauses.first();
+		let test_result = self.evaluate(first_clause)?;			
+		let truth = test_result.as_rust_bool()?;
+			//.with_context(||  format!("The test expression in the 'if' expression must be boolean: {}",&first_clause.print()))?;			
+			
+		if truth{ // evaluate if branch
+			self.evaluate(*clauses.rest().first())
+		}else{ // evaluate 'else' branch
+			self.evaluate(*clauses.rest().rest().first())
 		}
-							
+	//},
+
 	}
 	
 	// Instead of evaluating the list as a whole, evaluate each s-expression
