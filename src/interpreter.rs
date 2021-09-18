@@ -7,8 +7,11 @@ use crate::symbolic_expression::SExpression;
 use crate::list::List;
 
 
-// Built in simple functions
+
 use std::collections::HashMap;
+
+
+// Built in simple functions
 // Results of 'define' go here
 #[derive(Clone)]
 pub struct Environment<'a>{
@@ -159,38 +162,32 @@ impl  Environment <'_>{
 
 
 	fn subtract(&mut self, list:List)->Result<SExpression,String>{			
-		let first_item = self.evaluate(*list.first());
-		match Environment::checked_number(first_item){
-			Ok(leftmost_number)=>self.subtract_from(leftmost_number, list.rest()),
-			Err(e)=>Err(e),
-		}
-		
+		let first_item = self.evaluate(*list.first())?;
+		let leftmost_number = first_item.as_number()?;
+		self.subtract_from(leftmost_number, list.rest())		
 	}
 	
 	fn subtract_from(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
-		let next_item = self.evaluate(*list.first());
-		match Environment::checked_number(next_item){
-			Err(message)=>Err(message),		
-			Ok(right_value) =>{							
-				let partial_sum = match (left_value, right_value) {			
-					(Cell::Int(l),Cell::Int(r)) => Cell::Int(l - r),
-					(Cell::Int(l), Cell::Flt(r)) => Cell::Flt(l as f64 - r),
-					(Cell::Flt(l), Cell::Int(r)) => Cell::Flt(l - r as f64),
-					(Cell::Flt(l), Cell::Flt(r)) => Cell::Flt(l - r),
-					_ => {				
-						// Type error:
-						panic!("Data type error. Type checking should have caught this earlier.");
-					},
-				}; // match					
-				if list.rest().is_empty(){
-					Ok(SExpression::Cell(partial_sum))
-				}else{			
-					self.subtract_from(partial_sum, list.rest())		
-				}
-			} // Some(right_value)
-		} // match					
-	}
+		let next_item = self.evaluate(*list.first())?;
+		let right_value = next_item.as_number()?;
+					
+		let partial_sum = match (left_value, right_value) {			
+			(Cell::Int(l),Cell::Int(r)) => Cell::Int(l - r),
+			(Cell::Int(l), Cell::Flt(r)) => Cell::Flt(l as f64 - r),
+			(Cell::Flt(l), Cell::Int(r)) => Cell::Flt(l - r as f64),
+			(Cell::Flt(l), Cell::Flt(r)) => Cell::Flt(l - r),
+			_ => {				
+				// Type error:
+				panic!("Data type error. Type checking should have caught this earlier.");
+			},
+		}; // match					
+		if list.rest().is_empty(){
+			Ok(SExpression::Cell(partial_sum))
+		}else{			
+			self.subtract_from(partial_sum, list.rest())		
+		}
 
+	}
 
 
 	fn multiply(&mut self, list:List)->Result<SExpression,String>{			
@@ -198,29 +195,25 @@ impl  Environment <'_>{
 	}
 	
 	fn multiply_by(&mut self, left_value:Cell, list:List)-> Result<SExpression, String>{		
-		let next_item = self.evaluate(*list.first());
-		match Environment::checked_number(next_item){
-			Err(message)=>{
-				Err(message)
+		let next_item = self.evaluate(*list.first())?;
+		let right_value = next_item.as_number()?;
+	
+		let partial_product = match (left_value, right_value) {			
+			(Cell::Int(l),Cell::Int(r)) => Cell::Int(l * r),
+			(Cell::Int(l), Cell::Flt(r)) => Cell::Flt(l as f64 * r),
+			(Cell::Flt(l), Cell::Int(r)) => Cell::Flt(l * r as f64),
+			(Cell::Flt(l), Cell::Flt(r)) => Cell::Flt(l * r),
+			_ => {				
+				// Type error:
+				panic!("Data type error. Type checking should have caught this earlier.");
 			},
-			Ok(right_value) =>{							
-				let partial_product = match (left_value, right_value) {			
-					(Cell::Int(l),Cell::Int(r)) => Cell::Int(l * r),
-					(Cell::Int(l), Cell::Flt(r)) => Cell::Flt(l as f64 * r),
-					(Cell::Flt(l), Cell::Int(r)) => Cell::Flt(l * r as f64),
-					(Cell::Flt(l), Cell::Flt(r)) => Cell::Flt(l * r),
-					_ => {				
-						// Type error:
-						panic!("Data type error. Type checking should have caught this earlier.");
-					},
-				}; // match					
-				if list.rest().is_empty(){
-					Ok(SExpression::Cell(partial_product))
-				}else{			
-					self.multiply_by(partial_product, list.rest())		
-				}
-			} // Some(right_value)
-		} // match					
+		}; // match					
+		if list.rest().is_empty(){
+			Ok(SExpression::Cell(partial_product))
+		}else{			
+			self.multiply_by(partial_product, list.rest())		
+		}
+	
 	}
 
 
@@ -230,48 +223,42 @@ impl  Environment <'_>{
 		if list.rest().is_empty(){
 			self.divide_into(Cell::Int(1), list)		
 		}else{
-			let next_item = self.evaluate(*list.first());
-			match Environment::checked_number(next_item){
-				Ok(numerator) => self.divide_into(numerator, list.rest()),
-				Err(message) => Err(message),
-			} // match				
+			let next_item = self.evaluate(*list.first())?;
+			let numerator = next_item.as_number()?;
+			self.divide_into(numerator, list.rest())			
 		} // else
 	}
 	
 	fn divide_into(&mut self, numerator_value:Cell, list:List)-> Result<SExpression, String>{		
-		let next_item = self.evaluate(*list.first());
-		match Environment::checked_number(next_item){
-			Err(message)=>{
-				Err(message)
+		let next_item = self.evaluate(*list.first())?;
+		let denominator_value = next_item.as_number()?;
+
+		let partial_product = match (numerator_value, denominator_value) {			
+			(Cell::Int(n),Cell::Int(d)) => Cell::Int(n / d),
+			(Cell::Int(n), Cell::Flt(d)) => Cell::Flt(n as f64 / d),
+			(Cell::Flt(n), Cell::Int(d)) => Cell::Flt(n / d as f64),
+			(Cell::Flt(n), Cell::Flt(d)) => Cell::Flt(n / d),
+			_ => {				
+				// Type error:
+				panic!("Data type error. Type checking should have caught this earlier.");
 			},
-			Ok(denominator_value) =>{							
-				let partial_product = match (numerator_value, denominator_value) {			
-					(Cell::Int(n),Cell::Int(d)) => Cell::Int(n / d),
-					(Cell::Int(n), Cell::Flt(d)) => Cell::Flt(n as f64 / d),
-					(Cell::Flt(n), Cell::Int(d)) => Cell::Flt(n / d as f64),
-					(Cell::Flt(n), Cell::Flt(d)) => Cell::Flt(n / d),
-					_ => {				
-						// Type error:
-						panic!("Data type error. Type checking should have caught this earlier.");
-					},
-				}; // match					
-				if list.rest().is_empty(){
-					Ok(SExpression::Cell(partial_product))
-				}else{			
-					self.divide_into(partial_product, list.rest())		
-				}
-			} // Some(right_value)
-		} // match					
+		}; // match					
+		if list.rest().is_empty(){
+			Ok(SExpression::Cell(partial_product))
+		}else{			
+			self.divide_into(partial_product, list.rest())		
+		}
 	}
 	
 	fn eval_greater(&mut self, list:List)->Result<SExpression,String>{
 		if list.rest().is_empty(){
 			return Ok(SExpression::Cell(Cell::Bool(true)));
 		}
-		let left  = Environment::checked_number(self.evaluate(*list.first()));
-		let right = Environment::checked_number(self.evaluate(*list.rest().first()));
 		
-		let gt = match (left.unwrap(),right.unwrap()) {
+		let left  = Environment::checked_number(self.evaluate(*list.first()))?;
+		let right = Environment::checked_number(self.evaluate(*list.rest().first()))?;
+		
+		let gt = match (left,right){
 			(Cell::Int(i),Cell::Int(j)) => i > j,
 			(Cell::Int(i), Cell::Flt(j))=> i as f64 > j,
 			(Cell::Flt(i), Cell::Int(j)) => i > j as f64,
@@ -287,22 +274,17 @@ impl  Environment <'_>{
 	}	
 	
 	fn eval_or(&mut self, list:List)->Result<SExpression, String>{
-		let bool_value  = Environment::checked_rust_bool(self.evaluate(*list.first()));
-		match bool_value {
-			Ok(truth)=>{
-				if truth { 
-					Ok(SExpression::Cell(Cell::Bool(true)))
-				}else{
-					if list.rest().is_empty(){
-						Ok(SExpression::Cell(Cell::Bool(true)))
-					}else{
-						self.eval_or(list.rest())				
-					}
-						}
-				}, // ok truth
-				Err(message)=> Err(message)		
-			} // match bool_value
-					
+		let truth = Environment::checked_rust_bool(self.evaluate(*list.first()))?;							
+		if truth { 			
+			Ok(SExpression::Cell(Cell::Bool(true)))
+		}else{
+			if list.rest().is_empty(){
+				Ok(SExpression::Cell(Cell::Bool(true)))
+			}else{
+				self.eval_or(list.rest())				
+			}
+		}
+	
 	}
 
 		
@@ -342,14 +324,10 @@ impl  Environment <'_>{
 				// If it's a cell, it must be a symbol Cell::Symbol
 					SExpression::Cell(cell)=>
 						match cell{
-							Cell::Symbol(number, name)=>																								
-								match self.define(name, *value_for_symbol){
-									Ok(index) =>{
-										// TODO Also update all symbols with this number
-										Ok(*new_symbol.clone())								
-									},
-									Err(e)=>Err(e),
-								},							
+							Cell::Symbol(number,name)=>{														
+								let def_id =self.define(name, *value_for_symbol)?;
+								Ok(*new_symbol.clone())															
+							},
 							_=> Err(format!("Cannot re-define {}",&cell.print())),
 						},										
 										
@@ -363,14 +341,9 @@ impl  Environment <'_>{
 									Cell::Symbol(number,name)=>{
 										let params = Box::new(SExpression::List(parameter_names));
 										let body = Box::new(*value_for_symbol);
-										let value = SExpression::Cell(Cell::Lambda(params, body));													
-										match self.define(name, value){
-											Ok(index) =>{
-										// TODO Also update all symbols with this number
-												Ok(*new_symbol.clone())								
-											},
-											Err(e)=>Err(e),
-										}							
+										let value = SExpression::Cell(Cell::Lambda(params, body));
+										let def_id = self.define(name, value);
+										Ok(*new_symbol.clone())		
 									},
 									_ => Err(format!("Invalid function name: {}", &n.print())),
 								},
@@ -394,7 +367,6 @@ impl  Environment <'_>{
 		let first_clause = *clauses.first();
 		let test_result = self.evaluate(first_clause)?;			
 		let truth = test_result.as_rust_bool()?;
-			//.with_context(||  format!("The test expression in the 'if' expression must be boolean: {}",&first_clause.print()))?;			
 			
 		if truth{ // evaluate if branch
 			self.evaluate(*clauses.rest().first())
@@ -407,6 +379,8 @@ impl  Environment <'_>{
 	
 	// Instead of evaluating the list as a whole, evaluate each s-expression
 	// in the list and return a list of each of those evaluation results.
+	// In other words, don't assume the list begins with a function name and the
+	// rest is a set of arguments to it.
 	pub fn eval_each(&mut self, args:List)->Result< Vec<SExpression>, String>{
 		let mut eval_results:Vec<SExpression> = Vec::new();
 		let mut remaining_args = args.clone();
@@ -414,17 +388,11 @@ impl  Environment <'_>{
 		while !remaining_args.is_empty(){
 			println!("In eval_each with args: {}",&remaining_args.print());
 			let car = remaining_args.first();
-			let result = self.evaluate(*car);
-			match result{
-				Ok(value)=> {
-				println!("In eval_each: {}",&value.print());
-				eval_results.push(value)
-				},
-				Err(e)=> return Err(e)
-			}			
+			let value = self.evaluate(*car)?;			
+			println!("In eval_each: {}",&value.print());
+			eval_results.push(value);
 			remaining_args = remaining_args.rest();
-		}
-		
+		}		
 		Ok(eval_results)
 	}
 	
@@ -462,27 +430,21 @@ impl  Environment <'_>{
 			// new environment:			
 			
 			// Evaluate the arguments in the current context
-			let evaluated_args = self.eval_each(args);
-							
-			match evaluated_args{
-				Ok(values)=>{ // all evaluations were successful
-					// Make a new environment with the current one as the parent
-					let mut local_env = self.make_child();
+			let values_from_args = self.eval_each(args)?;
+			
+			// Make a new environment with the current one as the parent
+			let mut local_env = self.make_child();
 					
-					// Add all evaluated args to the child env with the 'params' names
-					// according to order in the function call:
-					local_env.define_all(*params,values);
-					println!("Created child env\n {}",&local_env.print());
-					local_env.evaluate(*body)												
-				},
-				Err(e)=>Err(e)
-			}
+			// Add all evaluated args to the child env with the 'params' names
+			// according to order in the function call:
+			local_env.define_all(*params,values_from_args);
+			println!("Created child env\n {}",&local_env.print());
+			local_env.evaluate(*body)								
 		}else{
 			Err(format!("Can't evaluate as function: {}",&func.print()))
 		}
 
 	}
-	
 	
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:

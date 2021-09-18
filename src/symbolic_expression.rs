@@ -39,16 +39,13 @@ impl SExpression{
 	}
 	
 	pub fn as_rust_bool(self)->Result<bool,String>{
-		match self.as_bool(){
-			Ok(bool_value)=>{
-				match bool_value{
-					Cell::Bool(truth) =>  Ok(truth),
-					_ => Err(format!("Not a boolean type {}",bool_value.print())),				
-				}
-			},
-			Err(message) =>  Err(message),			
-		}
+		let bool_cell = self.as_bool()?;
+		match bool_cell{
+			Cell::Bool(truth)=>Ok(truth),
+			_=>Err(format!("Not a boolean type {}",bool_cell.print())),
+		}		
 	}
+		
 	
 	
 } // impl SExpression
