@@ -10,6 +10,8 @@ use crate::list::List;
 
 use std::collections::HashMap;
 
+static TRACE:bool = false;
+
 
 // Built in simple functions
 // Results of 'define' go here
@@ -64,6 +66,8 @@ The other solution would be to use Rc<>  in both containers.
 	
 
 impl  Environment <'_>{
+
+	
 
 	// A formatted list of all defined symbols in the environment (not including parent)
 	pub fn print(&self)->String{
@@ -302,7 +306,7 @@ impl  Environment <'_>{
 					// of a list which gets evaluated in the List::evaluate9)
 					// function.
 					Cell::Symbol(number, symbol)=> {
-						println!("Try to evaluate symbol {}",&symbol);
+						if (TRACE) {println!("Try to evaluate symbol {}",&symbol);}
 						self.get_definition_by_symbol(symbol)						
 					},
 					_ => Ok(SExpression::Cell(c)),
@@ -384,17 +388,36 @@ impl  Environment <'_>{
 	pub fn eval_each(&mut self, args:List)->Result< Vec<SExpression>, String>{
 		let mut eval_results:Vec<SExpression> = Vec::new();
 		let mut remaining_args = args.clone();
-		println!("In eval_each!");
+		if TRACE {println!("In eval_each!");}
 		while !remaining_args.is_empty(){
-			println!("In eval_each with args: {}",&remaining_args.print());
+			if TRACE {println!("In eval_each with args: {}",&remaining_args.print());}
 			let car = remaining_args.first();
 			let value = self.evaluate(*car)?;			
-			println!("In eval_each: {}",&value.print());
+			if TRACE {println!("In eval_each: {}",&value.print());}
 			eval_results.push(value);
 			remaining_args = remaining_args.rest();
 		}		
 		Ok(eval_results)
 	}
+	
+	// For bodies of lambdas or "code blocks" to allow multiple expressions.The last
+	// expression is the value of the lambda or block.
+	fn eval_each_return_last(&mut self,expressions:SExpression)->Result<SExpression,String>{
+		match expressions{
+			SExpression::Cell(_)=>{
+				// This variation hits a stack overflow right away
+				let expr_list = List::make_from_sexps(vec![expressions]);
+				let values = self.eval_each(expr_list)?;
+				Ok(values[values.len()-1].clone())
+				
+			},
+			SExpression::Null=>Ok(SExpression::Null),
+			SExpression::List(list)=>{
+				let values = self.eval_each(list)?;
+				Ok(values[values.len()-1].clone())
+			},
+		}
+	}	
 	
 	// Assign all values to names in args
 	fn define_all(&mut self, params:SExpression, values:Vec<SExpression>){
@@ -411,7 +434,7 @@ impl  Environment <'_>{
 				panic!("Mismatch between number of arguments and function parameters!");
 			}
 			let value = values[arg_num].clone();			
-			//println!("Define {} as {}",&name, &value.print());
+			//if TRACE {println!("Define {} as {}",&name, &value.print());}
 			match *name{
 				SExpression::Cell(Cell::Symbol(_,n))=>self.define(n,value),
 				_=>panic!("A parameter name must be a symbol but you used {}",&*name.print()),
@@ -422,7 +445,7 @@ impl  Environment <'_>{
 	}
 		
 	pub fn apply_function(&mut self, number:i32, name:String, args:List)->Result<SExpression, String>{
-		println!("Try to evaluate symbol '{}' as function call",&name);
+		if TRACE {println!("Try to evaluate symbol '{}' as function call",&name);}
 		let func = self.get_definition_by_symbol(name)?;		
 		if let SExpression::Cell(Cell::Lambda(params,body)) = func{
 			// match the params to the args
@@ -438,8 +461,8 @@ impl  Environment <'_>{
 			// Add all evaluated args to the child env with the 'params' names
 			// according to order in the function call:
 			local_env.define_all(*params,values_from_args);
-			println!("Created child env\n {}",&local_env.print());
-			local_env.evaluate(*body)								
+			if TRACE {println!("Created child env\n {}",&local_env.print());}
+			local_env.eval_each_return_last(*body)								
 		}else{
 			Err(format!("Can't evaluate as function: {}",&func.print()))
 		}
@@ -460,13 +483,13 @@ impl  Environment <'_>{
 		}
 		
 		use crate::primitives::NumericOperator::*;
-		let not_implemented = String::from("Operator not implemented");
+		let not_implemented = format!("Operator '{}' not implemented",func.print());
 		match func {
 			Add=> self.add(list),				
 			Subtract=> self.subtract(list), 
 			Multiply=>  self.multiply(list),
 			Divide=>  self.divide(list),
-			Modulo=> Err(not_implemented),
+			_=>Err(not_implemented),
 		}
 	}
 	
@@ -484,7 +507,7 @@ impl  Environment <'_>{
 		}
 		
 		use crate::primitives::LogicalOperator::*;
-		let not_implemented = String::from("Operator not implemented");
+		let not_implemented = format!("Operator '{}' not implemented",func.print());
 		match func {
 			Greater=> self.eval_greater(list),
 			Or=> self.eval_or(list),				
