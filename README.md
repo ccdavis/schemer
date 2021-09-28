@@ -6,24 +6,23 @@ To start with, I was interested in using enum types to model the "atoms" or "cel
 
 Next, I wanted to use real linked lists to store the s-expressions and build the list handling in Rust without resorting to linked-list libraries.
 
-What exists so far is a core interpreter that can evaluate s-expressions and apply numeric operators. The interpreter has all basic arithmetic operations and also one comparison operator '>' and one logical operator 'or', on the way to implementing all basic comparison and logical operators.
+What exists so far is a core interpreter that can evaluate s-expressions and apply numeric operators, define variables and define functions.  The interpreter has all basic arithmetic operations and also one comparison operator '>' and one logical operator 'or', on the way to implementing all basic comparison and logical operators. The only conditional expression is 'if' so far.
 
-Some code in "main.rs" shows how one could build tests for language constructs. Just use the __cons()__ function and construct lists of cell values. No need for a tokenizer or REPLat this level.
+S-Expression evaluation takes place in an environment. "define" works for variables and functions; functions create their own environments and parameters and definitions inside the function are assigned to that local environment.
 
-There's a basic parser and tokenizer now. Some tests in main take text and parse and interpret it. The app will start up in a REPL mode.
+Some code in "main.rs" shows how one could build tests for language constructs. Just use the __cons()__ function and construct lists of cell values. No need for a tokenizer or REPLat this level. You could perhaps use the s-expression internal representation as a target for a parser of a more conventional type of language.
 
-S-Expression evaluation takes place in an environment. The 'define' special form adds to the environment. Basic variables work; lambdas are not yet working.
+There's only a basic parser and tokenizer now. Some tests in main take text and parse and interpret it. The app will start up in a REPL mode. You can also pass in a file name of a file with saved code.
 
 ### In Progress
 
-* Lambdas 
-* Make the environment scoped
 * Special commands for the REPL (exit), (env)
+* Sample test programs 
+* Explore tail call optimization
+* Support at least one iterative special form like "loop" or "do" or "while"
 
 ## To Do
 
-* Replace some of the deeply nested 'match' usage with more idiomatic Rust using closures and 'if let ... = ...{}'
-* Implement lambdas
 * Replace the current primitive lexer / tokenizer with something better
 * Better error handling: Right now I just use Result<SExpression,String> to pass back error messages.
 

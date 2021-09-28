@@ -319,6 +319,7 @@ impl  Environment <'_>{
 		
 		
 	pub fn apply_special_form(&mut self, func:SpecialForm, args:List)->Result<SExpression,String>{
+		if TRACE{println!("Apply special form {}",&func.print());}
 		match func {
 			SpecialForm::If=> self.evaluate_if(args),		
 			SpecialForm::Define => {
@@ -365,16 +366,19 @@ impl  Environment <'_>{
 	// Requires three arguments: 'if' must have a test expression and both outcomes of the test.
 	fn evaluate_if(&mut self, clauses:List)->Result<SExpression,String>{
 		if clauses.is_empty(){
-			return Err(format!("if expression has three parts."));
+			return Err(format!("if expression must have three parts."));
 		}
 		
 		let first_clause = *clauses.first();
+		if TRACE{println!("Evaluate test expression in if:");}
 		let test_result = self.evaluate(first_clause)?;			
 		let truth = test_result.as_rust_bool()?;
 			
 		if truth{ // evaluate if branch
+			if TRACE {println!("Evaluate if-true branch");}
 			self.evaluate(*clauses.rest().first())
 		}else{ // evaluate 'else' branch
+			if TRACE{println!("Evaluate if-false branch");}
 			self.evaluate(*clauses.rest().rest().first())
 		}
 	//},
@@ -392,30 +396,24 @@ impl  Environment <'_>{
 		while !remaining_args.is_empty(){
 			if TRACE {println!("In eval_each with args: {}",&remaining_args.print());}
 			let car = remaining_args.first();
+			if TRACE{println!("Eval this expression: {}",car.print());}
 			let value = self.evaluate(*car)?;			
-			if TRACE {println!("In eval_each: {}",&value.print());}
+			if TRACE {println!("In eval_each, got value: {}",&value.print());}
 			eval_results.push(value);
 			remaining_args = remaining_args.rest();
 		}		
 		Ok(eval_results)
 	}
 	
-	// For bodies of lambdas or "code blocks" to allow multiple expressions.The last
+	// For bodies of lambdas or "code blocks" to allow multiple expressions. The last
 	// expression is the value of the lambda or block.
-	fn eval_each_return_last(&mut self,expressions:SExpression)->Result<SExpression,String>{
-		match expressions{
-			SExpression::Cell(_)=>{
-				// This variation hits a stack overflow right away
-				let expr_list = List::make_from_sexps(vec![expressions]);
-				let values = self.eval_each(expr_list)?;
-				Ok(values[values.len()-1].clone())
-				
-			},
-			SExpression::Null=>Ok(SExpression::Null),
-			SExpression::List(list)=>{
-				let values = self.eval_each(list)?;
+	fn eval_each_return_last(&mut self,exprs:List)->Result<SExpression,String>{		
+		match *exprs.first(){
+			SExpression::List(_)=>{
+				let values = self.eval_each(exprs)?;
 				Ok(values[values.len()-1].clone())
 			},
+			_=> exprs.evaluate(self),
 		}
 	}	
 	
@@ -462,7 +460,10 @@ impl  Environment <'_>{
 			// according to order in the function call:
 			local_env.define_all(*params,values_from_args);
 			if TRACE {println!("Created child env\n {}",&local_env.print());}
-			local_env.eval_each_return_last(*body)								
+			match *body{
+				SExpression::List(list)=>local_env.eval_each_return_last(list),
+				_=>local_env.evaluate(*body),
+			}
 		}else{
 			Err(format!("Can't evaluate as function: {}",&func.print()))
 		}

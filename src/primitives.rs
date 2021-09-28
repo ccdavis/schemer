@@ -166,7 +166,7 @@ pub enum SpecialForm{
 }
 
 impl SpecialForm{
-	fn print(self)->&'static str{
+	pub fn print(self)->&'static str{
 		match self{
 			SpecialForm::Define=>"define",
 			SpecialForm::Let=>"let",
