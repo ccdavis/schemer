@@ -277,6 +277,54 @@ impl  Environment <'_>{
 		}	
 	}	
 	
+	
+	fn eval_less(&mut self, list:List)->Result<SExpression,String>{
+		if list.rest().is_empty(){
+			return Ok(SExpression::Cell(Cell::Bool(true)));
+		}
+		
+		let left  = Environment::checked_number(self.evaluate(*list.first()))?;
+		let right = Environment::checked_number(self.evaluate(*list.rest().first()))?;
+		
+		let lt = match (left,right){
+			(Cell::Int(i),Cell::Int(j)) => i < j,
+			(Cell::Int(i), Cell::Flt(j))=> (i as f64) < j,
+			(Cell::Flt(i), Cell::Int(j)) => i < j as f64,
+			(Cell::Flt(i), Cell::Flt(j)) => i < j,
+			_ => panic!("Type checking error, needed number type."),
+		};
+			
+		if  lt {
+			self.eval_less(list.rest())
+		}else{
+			Ok(SExpression::Cell(Cell::Bool(false)))
+		}	
+	}	
+	
+	fn eval_equal(&mut self, list:List)->Result<SExpression,String>{
+		if list.rest().is_empty(){
+			return Ok(SExpression::Cell(Cell::Bool(true)));
+		}
+		
+		let left  = Environment::checked_number(self.evaluate(*list.first()))?;
+		let right = Environment::checked_number(self.evaluate(*list.rest().first()))?;
+		
+		let eq = match (left,right){
+			(Cell::Int(i),Cell::Int(j)) => i == j,
+			(Cell::Int(i), Cell::Flt(j))=> (i as f64) == j,
+			(Cell::Flt(i), Cell::Int(j)) => i == j as f64,
+			(Cell::Flt(i), Cell::Flt(j)) => i == j,
+			_ => panic!("Type checking error, needed number type."),
+		};
+			
+		if  eq {
+			self.eval_equal(list.rest())
+		}else{
+			Ok(SExpression::Cell(Cell::Bool(false)))
+		}	
+	}	
+	
+		
 	fn eval_or(&mut self, list:List)->Result<SExpression, String>{
 		let truth = Environment::checked_rust_bool(self.evaluate(*list.first()))?;							
 		if truth { 			
@@ -290,6 +338,7 @@ impl  Environment <'_>{
 		}
 	
 	}
+
 
 		
 	// Evaluate any  S-Expression
@@ -505,12 +554,13 @@ impl  Environment <'_>{
 		if list.rest().is_empty(){
 			return Err(String::from("Operator ") + func.print() + " requires two arguments");
 					
-		}
-		
+		}		
 		use crate::primitives::LogicalOperator::*;
 		let not_implemented = format!("Operator '{}' not implemented",func.print());
 		match func {
 			Greater=> self.eval_greater(list),
+			Less=> self.eval_less(list),
+			Equal=>self.eval_equal(list),
 			Or=> self.eval_or(list),				
 			//And=>eval_and(list), 
 			//Not=> eval_not(list),
