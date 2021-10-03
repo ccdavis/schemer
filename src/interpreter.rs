@@ -371,6 +371,7 @@ impl  Environment <'_>{
 		if TRACE{println!("Apply special form {}",&func.print());}
 		match func {
 			SpecialForm::If=> self.evaluate_if(args),		
+			SpecialForm::Set=> self.evaluate_set(args),		
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();
@@ -432,6 +433,44 @@ impl  Environment <'_>{
 		}
 	//},
 
+	}
+	// The result of set! will be the symbol number in the current scope. Mostly this
+	// value is only a side-effect of set! which will be ignored.
+	fn evaluate_set(&mut self, args:List)->Result<SExpression,String>{
+		if args.is_empty(){
+			return Err(format!("set! expression must have two arguments."));
+		}
+		
+		let variable_to_change = *args.first();
+		let change_to = args.rest();
+		if change_to.is_empty(){
+			return Err(format!("set! expression must have two arguments."));
+		}
+		
+		if !change_to.rest().is_empty(){
+			return Err(format!("set! expression must have only two arguments."));
+		}
+		
+		let change_to_value = *change_to.first();
+		
+		let (local_number,name) = match variable_to_change{
+			SExpression::Cell(c)=>{
+				match c{
+					Cell::Symbol(n,s)=>Ok((n,s)),
+					_=>Err(format!("First argument to set! must be a symbol but was {} instead.",c.print())),
+				}
+			},
+			_=>Err(format!("First argument to set! must be a symbol.")),
+		}?;
+		
+			
+		let number = match self.definitions_by_symbol.get(&name){
+			Some(n)=>Ok(*n),
+			None=>Err(format!("{} not defined.", &name)),
+		}?;
+							
+		self.definitions[number] = change_to_value;
+		Ok(SExpression::Cell(Cell::Int(number as i64)))		
 	}
 	
 	// Instead of evaluating the list as a whole, evaluate each s-expression

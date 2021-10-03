@@ -157,7 +157,9 @@ pub enum SpecialForm{
 	While,
 	When,
 	Unless,
-	Return,
+	Break,
+	Continue,
+	Begin,
 		
 	Env,
 	Exit,
@@ -178,8 +180,9 @@ impl SpecialForm{
 			SpecialForm::While=>"while",
 			SpecialForm::When=>"when",
 			SpecialForm::Unless=>"unless",
-			SpecialForm::Return=>"return",
-			
+			SpecialForm::Break=>"break",
+			SpecialForm::Continue=>"continue",
+			SpecialForm::Begin=>"begin",
 			SpecialForm::Env=>"env",
 			SpecialForm::Exit=>"exit",
 			SpecialForm::Input=>"input",
