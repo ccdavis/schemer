@@ -5,7 +5,7 @@ use crate::primitives::LogicalOperator;
 use crate::primitives::SpecialForm;
 use crate::symbolic_expression::SExpression;
 use crate::list::List;
-
+use std::rc::Rc;
 
 
 use std::collections::HashMap;
@@ -372,6 +372,7 @@ impl  Environment <'_>{
 		match func {
 			SpecialForm::If=> self.evaluate_if(args),		
 			SpecialForm::Set=> self.evaluate_set(args),		
+			SpecialForm::While=>self.evaluate_while(args),
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();
@@ -430,10 +431,48 @@ impl  Environment <'_>{
 		}else{ // evaluate 'else' branch
 			if TRACE{println!("Evaluate if-false branch");}
 			self.evaluate(*clauses.rest().rest().first())
-		}
-	//},
-
+		}	
 	}
+	
+	fn evaluate_while(&mut self, clauses:List)->Result<SExpression,String>{
+		if clauses.is_empty(){
+			return Err(format!("while expression must have two  clauses (test) (body)."));
+		}
+		
+		if clauses.rest().is_empty(){
+			return Err(format!("while expression must have two  clauses (test) (body)."));
+		}
+		
+		
+		let test_expression = *clauses.first();
+		if TRACE{println!("test_expression: {:?}", &test_expression.print());}
+		
+		let mut test_result = self.evaluate(test_expression.clone())?;
+		if TRACE{println!("test_result: {:?}", &test_result.print());}
+		
+		let mut truth = test_result.as_rust_bool()?;
+		
+		let mut return_value = SExpression::Cell(Cell::Bool(false));
+		let body = *clauses.rest().first();
+		if TRACE{println!("body: {:?}",&body.print());}
+				
+		while truth{
+			
+			return_value = match body{
+				SExpression::List(ref list)=>self.eval_each_return_last(list.clone()),
+				_=>self.evaluate(body.clone()),
+			}?;
+			
+			if TRACE{println!("return value: {:?}",return_value.print());}
+						
+			test_result = self.evaluate(test_expression.clone())?;			
+			if TRACE{println!("test_result: {:?}",test_result.print());}
+			truth = test_result.as_rust_bool()?;
+		}
+		Ok(return_value)
+	}
+	
+		
 	// The result of set! will be the symbol number in the current scope. Mostly this
 	// value is only a side-effect of set! which will be ignored.
 	fn evaluate_set(&mut self, args:List)->Result<SExpression,String>{
@@ -451,7 +490,7 @@ impl  Environment <'_>{
 			return Err(format!("set! expression must have only two arguments."));
 		}
 		
-		let change_to_value = *change_to.first();
+		let change_to_value = self.evaluate(*change_to.first())?;
 		
 		let (local_number,name) = match variable_to_change{
 			SExpression::Cell(c)=>{
