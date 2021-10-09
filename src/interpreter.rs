@@ -335,8 +335,20 @@ impl  Environment <'_>{
 			}else{
 				self.eval_or(list.rest())				
 			}
-		}
+		}	
+	}
 	
+	pub fn eval_and(&mut self, list:List)->Result<SExpression, String>{
+		let truth = Environment::checked_rust_bool(self.evaluate(*list.first()))?;							
+		if truth{
+			if list.rest().is_empty() {
+				Ok(SExpression::Cell(Cell::Bool(truth)))
+			}else{
+				self.eval_and(list.rest())							
+			}
+		}else{
+			Ok(SExpression::Cell(Cell::Bool(truth)))
+		}		
 	}
 
 
@@ -640,7 +652,7 @@ impl  Environment <'_>{
 			Less=> self.eval_less(list),
 			Equal=>self.eval_equal(list),
 			Or=> self.eval_or(list),				
-			//And=>eval_and(list), 
+			And=>self.eval_and(list), 
 			//Not=> eval_not(list),
 			//Xor=> eval_xor(list),
 			Greater=> Err(not_implemented),
