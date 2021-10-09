@@ -208,14 +208,14 @@ pub enum Cell{
 
 impl Cell{
 
-	// Returns a map for use in parsing
+	
 	
 	pub fn print(&self)->String{
 		match &self{
 			Cell::Int(value)=>value.to_string(),
 			Cell::Flt(value)=>value.to_string(),
 			Cell::Str(value)=>value.to_string(),
-			Cell::Symbol(number,name)=>{String::from("Symbol ") + &number.to_string() + &name},
+			Cell::Symbol(number,name)=> format!("Symbol {}: {}",number,&name),
 			Cell::Bool(value) => value.to_string(),
 			Cell::Op(operator) => String::from(format!("Numeric operator {}", operator.print())),
 			Cell::Logical(operator)=>String::from(format!("Logical operator{}", operator.print())),

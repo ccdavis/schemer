@@ -82,14 +82,14 @@ impl List{
 		List{head:head}
 	}
 	
-	pub fn print(&self)->String{
+	pub fn print(&self)->String{		
 		match &self.head{
 			Link::Nil => String::from("()"),
 			Link::Data(_) => {
 				let first_print:String = self.first().print().clone();
 				first_print+ " " + &self.rest().print()  					 
 			},
-		}
+		}		
 	}	
 	
 	

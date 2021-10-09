@@ -162,7 +162,7 @@ fn main() {
 			
 		let mut envr = interpreter::Environment::new();
 		let results = interpret_top_level(code, &mut envr);
-		println!("=>  {}", &results);
+		//println!("=>  {}", &results);
 		
 		
 		

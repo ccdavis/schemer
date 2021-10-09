@@ -48,7 +48,7 @@ content...  I couldn't figure out a way to specify lifetimes to make it compile:
 safe but it may well not be in Rust.
 //
 
-The cannonical solution to this in Rust seems to be to store indexes into the Vec  in the HashMap rather than direct references
+The accepted solution to this in Rust seems to be to store indexes into the Vec  in the HashMap rather than direct references
 to the same data. It feels a bit less direct or performant but certainly safer.
 
 The other solution would be to use Rc<>  in both containers.
@@ -377,14 +377,26 @@ impl  Environment <'_>{
 				
 		}
 	}
+	
+	//  Can take the formatted output in the result and direct to another stream
+	fn evaluate_output(&mut self, args:List)->Result<SExpression,String>{
+		let results = self.eval_each(args)?;
+		let printed_results:String = results.iter()
+			.map(|r| r.print())
+			.collect::<Vec<String>>()
+			.join(" ");
 		
-		
+		println!("{}",&printed_results);
+		Ok(SExpression::Cell(Cell::Str(printed_results)))				
+	}
+				
 	pub fn apply_special_form(&mut self, func:SpecialForm, args:List)->Result<SExpression,String>{
 		if TRACE{println!("Apply special form {}",&func.print());}
 		match func {
 			SpecialForm::If=> self.evaluate_if(args),		
 			SpecialForm::Set=> self.evaluate_set(args),		
-			SpecialForm::While=>self.evaluate_while(args),
+			SpecialForm::While=> self.evaluate_while(args),
+			SpecialForm::Output=> self.evaluate_output(args), 
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();

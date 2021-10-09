@@ -19,10 +19,12 @@
 				(not-escaped? zn-x zn-iy))
 				
 		(set! tmp-zx (+ c-x 
-						( - (* zn-x zn-x)
-							(* zn-iy zn-iy)))
+					(- (* zn-x zn-x)
+						(* zn-iy zn-iy))))
+							
 		(set! zn-iy (+ c-iy 
-						(* 2.0 (* zn-x zn-iy)))
+					(* 2.0 (* zn-x zn-iy))))
+						
 		(set! zn-x tmp-zx)
 		(set! iterations (+ iterations 1))														
 	)
@@ -38,17 +40,28 @@
 	
 	(define x-increment 0.0)
 	(define y-increment 0.0)
+	(define height 0.0)
+	(define width 0.0)
+	(set! width (- right - left))
+	(set! height (- bottom top))
+		
+	(set! x-increment (/ width x-resolution))
+	(set! y-increment (/ height y-resolution))
 	
-	(set! x-increment (/ (- right left) x-resolution))
-	(set! y-increment (/ (- top bottom) y-resolution))
+	(define points 0)
+	(output points)
 	
 	(while (< left right)				
 		(while (< top bottom)
 			(in-mandelbrot left top)			
 			(set! top (+ top y-increment))
+			(set! points (+ points 1))
 		)
 		(set! left (+ left x-increment))
-	)
+		(output points)
+	)	
+	(output points)
 )
+(output (calc -1.5 -1.0 1.0 1.0))
 
-(calc -1.5 -1.0 1.0 1.0)
+

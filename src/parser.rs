@@ -71,10 +71,10 @@ impl Parser{
 
 	fn parse_cell(&self, token: &str) -> SExpression{
 		// This first block should handle (eventually) all built in symbols
-		println!("TOKEN : '{}' ", token);
+		//println!("TOKEN : '{}' ", token);
 		if self.reserved_symbol_lookup.contains_key(token){
 			let op = self.reserved_symbol_lookup.get(token).unwrap();
-			println!("Identified reserved word: '{}' ", op.print());
+//			println!("Identified reserved word: '{}' ", op.print());
 			SExpression::Cell(op.clone())		
 		}else{
 			// This block will handle all primitive literals and symbols
