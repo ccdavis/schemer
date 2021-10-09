@@ -1,0 +1,79 @@
+
+
+define type ExampleRec as Record( x:Integer, Y:Float, z:String)
+
+define variable rec as ExampleRec(x:25,y:3.3,z:"example")
+
+define value pi as 3.14159
+define value e:Double as 2.71828
+
+define variable accurate_pi as BigDecimal(pi)
+
+define variable x,y,z as 0
+
+// Functions take anonymous records for their parameters. This way the name of the arguments is used, 
+// never the argument order.
+
+// full form
+define function area:Float as Function(radius:Float) 
+(begin 
+	(radius * pi * pi)
+end)
+	
+
+// short form
+function area:Float = (radius:Float) (radius * pi * pi)
+
+// This is an error
+variable this_area = area(3.3)
+
+// This is correct:
+variable this_area = area(radius: 3.3)
+
+// These are just aliases
+type KG as Float
+type MperSecPerSec as Float
+type Newtons as Float
+
+
+function force:Newtons = (mass:KG, acceleration:MperSecPerSec) ( mass * acceleration)
+
+value car_impact = force(mass: KG(1500.0), acceleration: MperSecPerSec(3.5))
+
+variable truck_weight = KG(7500)
+variable truck_accel = MperSecPerSec(1.5)
+value truck_impact = force(mass: truck_weight, acceleration: truck_accel)
+
+
+
+// If it's not obvious from context you put the type on the right-hand side of a define
+
+variable temperature = 32  // Will create an integer but we want a float, so:
+variable temperature = Float(32)  // or
+variable temperature = 32.0
+variable private_key,public_key = BigInteger(0) // is going to be a huge number
+
+// Mutating values
+
+define variable total_impacts as Newtons(0)
+total_impacts := total_impacts +  force(mass: truck_weight, accelleration: truck_accel)
+total_impacts := car_impact + total_impacts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
