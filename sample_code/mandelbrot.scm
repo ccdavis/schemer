@@ -14,6 +14,7 @@
 	(define zn-iy 0.0)
 	
 	(define tmp-zx 0.0)
+	(output c-x c-iy)
 		
 	(while (and (< iterations max-iterations)
 				(not-escaped? zn-x zn-iy))
@@ -28,28 +29,34 @@
 		(set! zn-x tmp-zx)
 		(set! iterations (+ iterations 1))														
 	)
-	(< iterations max-iterations)		
+	(< iterations max-iterations)			
 )
 
 
-(define (calc x1 y1 x2 y2)
+(define (calc x1 y1 x2 y2)	
+(
 	(define left x1)
+	(output 7 7 7 7)
 	(define right x2)
 	(define top y1)
 	(define bottom y2)
+		
+	(output 8 8 8 8 8 8)
 	
 	(define x-increment 0.0)
 	(define y-increment 0.0)
 	(define height 0.0)
 	(define width 0.0)
-	(set! width (- right - left))
+	(output 2 2 2 2 2)
+	(set! width (- right left))
+	(output 3 3 3 3)
 	(set! height (- bottom top))
 		
 	(set! x-increment (/ width x-resolution))
 	(set! y-increment (/ height y-resolution))
 	
 	(define points 0)
-	(output points)
+	(output 9 9 9 9)
 	
 	(while (< left right)				
 		(while (< top bottom)
@@ -58,10 +65,14 @@
 			(set! points (+ points 1))
 		)
 		(set! left (+ left x-increment))
+		(output left)
 		(output points)
 	)	
-	(output points)
 )
-(output (calc -1.5 -1.0 1.0 1.0))
+)
+
+(output 5 5 5 5)
+(calc -1.5 -1.0 1.0 1.0)
+
 
 

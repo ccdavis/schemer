@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use std::collections::HashMap;
 
-static TRACE:bool = false;
+static TRACE:bool = true;
 
 
 // Built in simple functions
@@ -559,6 +559,9 @@ impl  Environment <'_>{
 	// For bodies of lambdas or "code blocks" to allow multiple expressions. The last
 	// expression is the value of the lambda or block.
 	fn eval_each_return_last(&mut self,exprs:List)->Result<SExpression,String>{		
+		let results = self.eval_each(exprs)?;		
+		Ok(results[results.len()-1].clone())
+		/*
 		match *exprs.first(){
 			SExpression::List(_)=>{
 				let values = self.eval_each(exprs)?;
@@ -566,6 +569,7 @@ impl  Environment <'_>{
 			},
 			_=> exprs.evaluate(self),
 		}
+		*/
 	}	
 	
 	// Assign all values to names in args

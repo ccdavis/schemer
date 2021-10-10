@@ -48,8 +48,8 @@ fn interpret_top_level(program:String, environment:&mut interpreter::Environment
 	let tokens = parser::lex(main_program);
 	let p = parser::Parser::new();
 	
-	match p.parse(&tokens){
-		Ok((valid_ast,_)) =>		
+	let result = match p.parse(&tokens){
+		Ok((valid_ast,_)) =>
 			// Parser seemed to work, so attempt to interpret the AST
 			match valid_ast{
 				SExpression::List(list)=>
@@ -64,15 +64,17 @@ fn interpret_top_level(program:String, environment:&mut interpreter::Environment
 					match environment.evaluate(valid_ast){
 						Ok(ref result)=>result.print(),
 						Err(error)=>format!("Interpreter error {}",error),
-					},
-			},			
+					},				
+			},
 		Err(error) =>{
 			// handle different types of errors
 			match error{
 				parser::ParseError::Reason(reason) =>format!("{}", reason),
 			}
 		}
-	}
+	};
+	println!("{}",&result);
+	result
 }
 
 
