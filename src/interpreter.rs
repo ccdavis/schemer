@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use std::collections::HashMap;
 
-static TRACE:bool = true;
+static TRACE:bool = false;
 
 
 // Built in simple functions
@@ -404,9 +404,10 @@ impl  Environment <'_>{
 				// If it's a cell, it must be a symbol Cell::Symbol
 					SExpression::Cell(cell)=>
 						match cell{
-							Cell::Symbol(number,name)=>{														
-								let def_id =self.define(name, *value_for_symbol)?;
-								Ok(*new_symbol.clone())															
+							Cell::Symbol(number,name)=>{
+								let evaluated_value = self.evaluate(*value_for_symbol)?;
+								let def_id =self.define(name, evaluated_value)?;
+								Ok(*new_symbol.clone())	
 							},
 							_=> Err(format!("Cannot re-define {}",&cell.print())),
 						},										
