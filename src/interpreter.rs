@@ -396,10 +396,18 @@ impl  Environment <'_>{
 			SpecialForm::If=> self.evaluate_if(args),		
 			SpecialForm::Set=> self.evaluate_set(args),		
 			SpecialForm::While=> self.evaluate_while(args),
+			SpecialForm::Begin=>self.eval_each_return_last(args),
 			SpecialForm::Output=> self.evaluate_output(args), 
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();
+				
+				// Check for extra expressions after the one used as the value to define:
+				if !args.rest().rest().is_empty(){
+					return Err(format!("define can only take one expression as the value to assign to the symbol or lambda: {}",
+						&new_symbol.print()));
+				}
+				
 				match *new_symbol.clone(){
 				// If it's a cell, it must be a symbol Cell::Symbol
 					SExpression::Cell(cell)=>
@@ -467,8 +475,7 @@ impl  Environment <'_>{
 		if clauses.rest().is_empty(){
 			return Err(format!("while expression must have two  clauses (test) (body)."));
 		}
-		
-		
+				
 		let test_expression = *clauses.first();
 		if TRACE{println!("test_expression: {:?}", &test_expression.print());}
 		
@@ -479,14 +486,14 @@ impl  Environment <'_>{
 		
 		let mut return_value = SExpression::Cell(Cell::Bool(false));
 		let body = *clauses.rest().first();
+		if !clauses.rest().rest().is_empty(){
+			return Err(format!("while expression body must not have  more than one s-expression."));
+		}
+		
 		if TRACE{println!("body: {:?}",&body.print());}
 				
-		while truth{
-			
-			return_value = match body{
-				SExpression::List(ref list)=>self.eval_each_return_last(list.clone()),
-				_=>self.evaluate(body.clone()),
-			}?;
+		while truth{			
+			return_value = self.evaluate(body.clone())?;
 			
 			if TRACE{println!("return value: {:?}",return_value.print());}
 						
@@ -541,6 +548,9 @@ impl  Environment <'_>{
 	// in the list and return a list of each of those evaluation results.
 	// In other words, don't assume the list begins with a function name and the
 	// rest is a set of arguments to it.
+	//
+	// This is like a (begin...) block but a special case for top-level code 
+	// in a program file or from the REPL.
 	pub fn eval_each(&mut self, args:List)->Result< Vec<SExpression>, String>{
 		let mut eval_results:Vec<SExpression> = Vec::new();
 		let mut remaining_args = args.clone();
@@ -559,18 +569,11 @@ impl  Environment <'_>{
 	
 	// For bodies of lambdas or "code blocks" to allow multiple expressions. The last
 	// expression is the value of the lambda or block.
+	//
+	// This is the behavior we want from a (begin ...) block of expressions.
 	fn eval_each_return_last(&mut self,exprs:List)->Result<SExpression,String>{		
 		let results = self.eval_each(exprs)?;		
-		Ok(results[results.len()-1].clone())
-		/*
-		match *exprs.first(){
-			SExpression::List(_)=>{
-				let values = self.eval_each(exprs)?;
-				Ok(values[values.len()-1].clone())
-			},
-			_=> exprs.evaluate(self),
-		}
-		*/
+		Ok(results[results.len()-1].clone())		
 	}	
 	
 	// Assign all values to names in args
@@ -616,10 +619,7 @@ impl  Environment <'_>{
 			// according to order in the function call:
 			local_env.define_all(*params,values_from_args);
 			if TRACE {println!("Created child env\n {}",&local_env.print());}
-			match *body{
-				SExpression::List(list)=>local_env.eval_each_return_last(list),
-				_=>local_env.evaluate(*body),
-			}
+			local_env.evaluate(*body)			
 		}else{
 			Err(format!("Can't evaluate as function: {}",&func.print()))
 		}
