@@ -3,6 +3,7 @@ use crate::primitives::Cell;
 use crate::primitives::NumericOperator;
 use crate::primitives::LogicalOperator;
 use crate::primitives::SpecialForm;
+use crate::primitives::CoreFunc;
 use crate::symbolic_expression::SExpression;
 use crate::list::List;
 use std::rc::Rc;
@@ -389,6 +390,36 @@ impl  Environment <'_>{
 		println!("{}",&printed_results);
 		Ok(SExpression::Cell(Cell::Str(printed_results)))				
 	}
+	
+	pub fn apply_core_func(&mut self,func:CoreFunc,args:List)->Result<SExpression,String>{
+		if TRACE{println!("Apply core function {}",&func.print());}
+		let values_from_args = self.eval_each(args)?;
+		match func{
+			CoreFunc::List=>Ok(SExpression::List(List::make_from_sexps(values_from_args))),
+			CoreFunc::First=>{
+				if values_from_args.len() > 1{
+					return Err(format!("Too many arguments to 'first'."));
+				}								
+				match values_from_args[0]{
+					SExpression::List(ref list)=>Ok(*list.first()),
+					_=> Err(format!("The 'first' function requires a list as its argument.")),
+				}
+			},
+			CoreFunc::Rest=>{
+				if values_from_args.len()>1{
+					return Err(format!("Too many arguments to 'rest'."));
+				}
+								
+				match values_from_args[0]{
+					SExpression::List(ref list)=> 
+						Ok(SExpression::List(list.rest())),				
+					_=>Err(format!("The argument to 'rest' must be a list, got {}",&values_from_args[0].print())),
+				}
+			},
+			_=>Err(format!("{} not implemented",func.print() )),
+			
+		}
+	}
 				
 	pub fn apply_special_form(&mut self, func:SpecialForm, args:List)->Result<SExpression,String>{
 		if TRACE{println!("Apply special form {}",&func.print());}
@@ -397,7 +428,7 @@ impl  Environment <'_>{
 			SpecialForm::Set=> self.evaluate_set(args),		
 			SpecialForm::While=> self.evaluate_while(args),
 			SpecialForm::Begin=>self.eval_each_return_last(args),
-			SpecialForm::Output=> self.evaluate_output(args), 
+			SpecialForm::Output=> self.evaluate_output(args), 			
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();

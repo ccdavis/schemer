@@ -35,8 +35,6 @@
 	(< iterations max-iterations)			
 ))
 
-
-
 (define (calc x1 y1 x2 y2)	
 (begin
 	(define left x1)	

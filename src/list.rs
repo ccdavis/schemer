@@ -102,6 +102,7 @@ impl List{
 				SExpression::Cell(cell)=>
 					match cell{
 						Cell::Special(form) => envr.apply_special_form(form, self.rest()),
+						Cell::Core(func)=>envr.apply_core_func(func,self.rest()), 
 						// If it's a symbol at the head of the list, it must be a function call
 						Cell::Symbol(number,name)=>{								
 							envr.apply_function(number,name,self.rest())
