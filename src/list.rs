@@ -73,6 +73,26 @@ impl List{
 		List{head:head}
 	}
 	
+	
+	// If the second argument is a list wemove the head of the list to the left
+	// hand argument rather than making a (list exp (list exp2))
+	// 'cons' in scheme  works like:
+	//
+	// > (cons 1 (list 2 3))
+	// -> > (1 2 3)
+	pub fn construct_list(exp1:SExpression,exp2:SExpression)->List{		
+		let new_link = match exp2{
+			SExpression::List(list)=>cons(exp1,list.head),
+			_=> {
+				let end_link =cons(exp2,Link::Nil);
+				cons(exp1, end_link)
+			},
+							
+		};
+		List{head:new_link}				
+	}
+	
+	
 	pub fn make_from_sexps(exps:Vec<SExpression>)->List{
 		let tail:Link =Link::Nil;
 		let mut head:Link= tail;

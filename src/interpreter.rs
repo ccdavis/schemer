@@ -396,7 +396,13 @@ impl  Environment <'_>{
 		let values_from_args = self.eval_each(args)?;
 		match func{
 			CoreFunc::List=>Ok(SExpression::List(List::make_from_sexps(values_from_args))),
-			CoreFunc::First=>{
+			CoreFunc::Cons=>{
+				if values_from_args.len() > 2{
+					return Err(format!("Too many arguments to 'cons'."));
+				}								
+				Ok(SExpression::List(List::construct_list(values_from_args[0].clone(),values_from_args[1].clone())))				
+			},
+			CoreFunc::First=>{				
 				if values_from_args.len() > 1{
 					return Err(format!("Too many arguments to 'first'."));
 				}								
