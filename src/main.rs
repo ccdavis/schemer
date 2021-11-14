@@ -44,7 +44,7 @@ fn interpret(program:String, environment:&mut interpreter::Environment)->String{
 
 
 fn interpret_top_level(program:String, environment:&mut interpreter::Environment)->String{
-	let mut main_program:String  = String::from("(") + &program + ")";
+	let main_program:String  = String::from("(") + &program + ")";
 	let tokens = parser::lex(main_program);
 	let p = parser::Parser::new();
 	

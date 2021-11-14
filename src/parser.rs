@@ -36,6 +36,7 @@ pub struct Lexer{
 	line:usize,
 	column:usize,
 	text:String,	
+	all_chars:Vec<char>,
 }
 
 impl Lexer{
@@ -46,7 +47,8 @@ impl Lexer{
 
 	fn new(text:String)->Self{
 		Self{
-			text:text,
+			text:text.clone(),
+			all_chars:text.chars().collect(),
 			pos:0,
 			line:1,
 			column:1,
@@ -66,7 +68,7 @@ impl Lexer{
 	}
 	
 	fn this_char(&self)->char{
-		self.text[self.pos]
+		self.all_chars[self.pos]
 	}
 	
 	fn whitespace(&self)->bool{
@@ -74,7 +76,7 @@ impl Lexer{
 	}
 	
 	fn begin_comment(&self)->bool{
-		self.this_char() == ";"
+		self.this_char() == ';'
 	}
 	
 	fn symbol_or_number_char(&self)->bool{
@@ -104,7 +106,7 @@ impl Lexer{
 		
 		self.skip_whitespace();
 		if self.end_of_input(){
-			return Token{token_type:EOF,line:self.line,column:self.column};
+			return Token{token_type:TokenType::EOF,line:self.line,column:self.column};
 		}
 				
 		let next_token = match self.this_char(){		
@@ -114,7 +116,7 @@ impl Lexer{
 			},
 			')' =>{
 				self.advance();
-				Token { token_type:TokenType::RightParen,line:self.line, column:self.column};
+				Token { token_type:TokenType::RightParen,line:self.line, column:self.column}
 			},
 			'"' =>{
 				let starting_line = self.line;
@@ -127,7 +129,7 @@ impl Lexer{
 				}
 				
 				self.advance(); // eat the second " 
-				Token{token_type:StringLiteral(content), line:starting_line, column:starting_column}				
+				Token{token_type:TokenType::StringLiteral(content), line:starting_line, column:starting_column}				
 			},
 			_=> {
 				if self.symbol_or_number_char() {
@@ -135,7 +137,7 @@ impl Lexer{
 					while self.symbol_or_number_char(){
 						content.push(self.this_char());
 					}
-					Token{token_type:Other(content),line:self.line,column:self.column}
+					Token{token_type:TokenType::Other(content),line:self.line,column:self.column}
 				}else{
 					// Something we didn't account for
 					// TODO: throw a real error!

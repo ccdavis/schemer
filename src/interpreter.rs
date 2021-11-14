@@ -57,8 +57,8 @@ The other solution would be to use Rc<>  in both containers.
 */
 
 	pub fn extend_environment<'a>(env:&'a mut Environment)->Environment<'a>{
-		let mut no_definitions :HashMap<String, usize> = HashMap::new();
-		let mut empty_symbol_table = Vec::new();
+		let no_definitions :HashMap<String, usize> = HashMap::new();
+		let empty_symbol_table = Vec::new();
 		Environment{ 
 			parent : Some(env), 
 			definitions_by_symbol: no_definitions, 
@@ -81,8 +81,8 @@ impl  Environment <'_>{
 	}
 		
 	pub fn new()->Self{
-		let mut no_definitions :HashMap<String, usize> = HashMap::new();
-		let mut empty_symbol_table = Vec::new();
+		let no_definitions :HashMap<String, usize> = HashMap::new();
+		let empty_symbol_table = Vec::new();
 		Environment{ 
 			parent : None, 
 			definitions_by_symbol: no_definitions, 
@@ -91,8 +91,8 @@ impl  Environment <'_>{
 	
 
 	pub fn make_child<'a>(&'a mut self)->Environment<'a>{
-		let mut no_definitions :HashMap<String, usize> = HashMap::new();
-		let mut empty_symbol_table = Vec::new();
+		let no_definitions :HashMap<String, usize> = HashMap::new();
+		let empty_symbol_table = Vec::new();
 		Environment{ 
 			parent : Some(self), 
 			definitions_by_symbol: no_definitions, 
@@ -368,7 +368,7 @@ impl  Environment <'_>{
 					// of a list which gets evaluated in the List::evaluate9)
 					// function.
 					Cell::Symbol(number, symbol)=> {
-						if (TRACE) {println!("Try to evaluate symbol {}",&symbol);}
+						if TRACE {println!("Try to evaluate symbol {}",&symbol);}
 						self.get_definition_by_symbol(symbol)						
 					},
 					_ => Ok(SExpression::Cell(c)),
