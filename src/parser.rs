@@ -45,7 +45,7 @@ impl Lexer{
 		self.pos == self.text.len()
 	}
 
-	fn new(text:String)->Self{
+	pub fn new(text:String)->Self{
 		Self{
 			text:text.clone(),
 			all_chars:text.chars().collect(),
@@ -97,7 +97,7 @@ impl Lexer{
 		}
 	}
 
-	fn next(&mut self)->Token{
+	pub fn next(&mut self)->Token{
 		if self.begin_comment(){
 			while self.this_char() !='\n'  &&  !self.end_of_input(){
 				self.advance();
@@ -164,6 +164,14 @@ pub fn lex(expression: String) -> Vec<String> {
 	.collect()
 }
 
+pub fn tokenize(text:String)->[Token]{
+	let mut lex = Lexer::new(text);
+	let mut all_tokens = Vec::new();
+	while !lex.end_of_input(){
+		all_tokens.push(lex.next());
+	}
+	all_tokens	
+}
 
 pub struct Parser{
 	reserved_symbol_lookup:HashMap<String, Cell>,	
@@ -175,7 +183,69 @@ impl Parser{
 		Self{ reserved_symbol_lookup:map_cell_from_string()}
 	}
 	
+	pub fn parse_tokens<'a>(&self, tokens:&'a [Token])->Result<(SExpression, &'a [Token]), ParseError> {				
+	  let (token, rest) = tokens.split_first()
+		.ok_or(
+		  ParseError::Reason("could not get token".to_string())
+		)?;
+	  match &token[..].token_type {
+		 TokenType::LeftParen=> self.read_list_tokens(rest),
+		TokenType::RightParen => Err(ParseError::Reason("unexpected `)`".to_string())),
+		_ => Ok((self.parse_cell_token(token), rest)),
+	  }
+	}
 	
+	fn read_list_tokens<'a>(&self, tokens: &'a [Token]) -> Result<(SExpression, &'a [Token]), ParseError> {
+	  let mut res: Vec<SExpression> = vec![];
+	  let mut xs = tokens;
+	  loop {
+		let (next_token, rest) = xs
+		  .split_first()
+		  .ok_or(ParseError::Reason("could not find closing `)`".to_string()))
+		  ?;
+		  
+		match next_token.token_type{
+			TokenType::RightParen=>{
+				return Ok((SExpression::List(List::make_from_sexps(res)), rest)) // skip `)`, head to the token after
+			},
+			TokenType::EOF=>ParseError::Reason("could not find closing `)` and reached end of input.".to_string()),
+			_=>{
+				let (exp, new_xs) = self.parse_tokens(&xs)?;
+				res.push(exp);
+				xs = new_xs;
+			}
+		} // match
+	  } // loop
+	}
+	
+	
+	fn parse_cell_token(&self, token: &Token) -> SExpression{
+		//println!("TOKEN : '{}' ", token);
+		let (token_data,is_string) = match token.token_type{
+			TokenType::Other(value)=>(value,false),
+			TokenType::StringLiteral(value)=> (value,true),
+			_=>ParseError(format!("Unexpected token type at {}, {}",token.line,token.column)),
+		};
+		
+		if !is_string && self.reserved_symbol_lookup.contains_key(token_data){
+			let op = self.reserved_symbol_lookup.get(token).unwrap();
+//			println!("Identified reserved word: '{}' ", op.print());
+			SExpression::Cell(op.clone())		
+		}else{
+			if is_string{
+				SExpression::Cell(Cell::Str(token_data))
+		// it should parse as a number or else it's a symbol; built-in operators and strings are already eliminated 
+			}else{	
+				let potential_float: Result<f64, ParseFloatError> = token.parse();
+				match potential_float {
+					Ok(v) => SExpression::Cell(Cell::Flt(v)),
+					Err(_) => SExpression::Cell(Cell::Symbol(0, token.to_string().clone()))
+				}
+			}			
+		}			
+	}
+
+			
 	pub fn parse<'a>(&self, tokens: &'a [String]) -> Result<(SExpression, &'a [String]), ParseError> {				
 	  let (token, rest) = tokens.split_first()
 		.ok_or(
