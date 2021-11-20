@@ -165,6 +165,7 @@ pub enum SpecialForm{
 	Exit,
 	Input,
 	Output,		
+	OutputLine,
 }
 
 impl SpecialForm{
@@ -187,6 +188,7 @@ impl SpecialForm{
 			SpecialForm::Exit=>"exit",
 			SpecialForm::Input=>"input",
 			SpecialForm::Output=>"output",			
+			SpecialForm::OutputLine=>"output-line",			
 		}
 	}
 }

@@ -1,7 +1,7 @@
 
-(define x-resolution 200)
-(define y-resolution 320)
-(define max-iterations 25)
+(define x-resolution 100)
+(define y-resolution 132)
+(define max-iterations 	100)
 (define escape-radius 2.0)
 	
 (define (not-escaped? x iy)
@@ -50,14 +50,15 @@
 	(define points 0)
 	(define columns 0)
 	
-	(output points)
-	
+	(output-line "Mandelbrot set at: " x-resolution  " x " y-resolution " resolution.")
+	(output-line "")
 	(while (< left right)				
-	(begin
+	(begin		
+		(output-line "")
 		(set! columns (+ columns 1))
 		(while (< top bottom)
 		(begin
-			(in-mandelbrot left top)			
+			(if (in-mandelbrot left top) (output "*") (output " "))
 			(set! top (+ top y-increment))
 			(set! points (+ points 1))						
 		))

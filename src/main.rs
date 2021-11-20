@@ -72,6 +72,7 @@ fn interpret_top_level(program:String, environment:&mut interpreter::Environment
 		}
 	};
 	println!("{}",&result);
+	
 	result
 }
 
@@ -82,6 +83,7 @@ fn interpret_top_level(program:String, environment:&mut interpreter::Environment
 fn repl(){	
     // `()` can be used when no completer is required
     let mut rl = Editor::<()>::new();
+	
     if rl.load_history("history.txt").is_err() {
         println!("No previous history.");
     }

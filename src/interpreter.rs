@@ -7,7 +7,8 @@ use crate::primitives::CoreFunc;
 use crate::symbolic_expression::SExpression;
 use crate::list::List;
 use std::rc::Rc;
-
+use std::io;
+use std::io::Write;
 
 use std::collections::HashMap;
 
@@ -67,8 +68,6 @@ The other solution would be to use Rc<>  in both containers.
 	
 
 impl  Environment <'_>{
-
-	
 
 	// A formatted list of all defined symbols in the environment (not including parent)
 	pub fn print(&self)->String{
@@ -387,8 +386,16 @@ impl  Environment <'_>{
 			.collect::<Vec<String>>()
 			.join(" ");
 		
-		println!("{}",&printed_results);
+		print!("{}",&printed_results);
+		io::stdout().flush().unwrap();
+		
 		Ok(SExpression::Cell(Cell::Str(printed_results)))				
+	}
+	
+	fn evaluate_output_line(&mut self, args:List)-> Result<SExpression, String>{
+		let result = self.evaluate_output(args);
+		println!("");
+		result
 	}
 	
 	pub fn apply_core_func(&mut self,func:CoreFunc,args:List)->Result<SExpression,String>{
@@ -435,6 +442,7 @@ impl  Environment <'_>{
 			SpecialForm::While=> self.evaluate_while(args),
 			SpecialForm::Begin=>self.eval_each_return_last(args),
 			SpecialForm::Output=> self.evaluate_output(args), 			
+			SpecialForm::OutputLine=> self.evaluate_output_line(args), 			
 			SpecialForm::Define => {
 				let new_symbol = args.first();
 				let value_for_symbol = args.rest().first();
@@ -690,6 +698,8 @@ impl  Environment <'_>{
 
 	// Assuming it is not a null list and we have an operator or function, pass its cdr in and apply it:
 	pub fn apply_logical_operator(&mut self, func:LogicalOperator, list:List)-> Result<SExpression, String>{		
+		
+		
 		// The cdr (now list) must have at least two items
 		if list.is_empty(){
 			return Err(String::from("Operator ") + func.print() + " requires two arguments");			

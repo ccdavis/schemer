@@ -34,7 +34,7 @@ impl List{
 	pub fn is_empty(&self)->bool{
 		match &self.head{
 			Link::Nil=> true,
-			Link::Data(pair)=>false
+			Link::Data(_)=>false
 		}					
 	}
 
@@ -44,7 +44,7 @@ impl List{
 				// runtime error?
 				Box::<SExpression>::new(SExpression::Null)
 			},
-			Link::Data(pair)=>{
+			Link::Data(ref pair)=>{
 				pair.car.clone()
 			}			
 		}
@@ -56,7 +56,7 @@ impl List{
 				// runtime error?
 				List{head:Link::Nil}
 			},
-			Link::Data(pair) => {
+			Link::Data(ref pair) => {
 				List{head:pair.cdr.clone()}
 			}
 		}					
