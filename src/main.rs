@@ -17,10 +17,9 @@ use crate::primitives::NumericOperator;
 
 
 // Put this in the REPL loop
-fn interpret(program:String, environment:&mut interpreter::Environment)->String{
-	let tokens = parser::lex(program);
-	let p = parser::Parser::new();
-	match p.parse(&tokens){
+fn interpret(program:String, environment:&mut interpreter::Environment)->String{	
+	let p = parser::Parser::new();	
+	match p.parse_tokens(&parser::tokenize(program)){
 		Ok((valid_ast,_)) =>{		
 			// Parser seemed to work, so attempt to interpret the AST
 			let r = environment.evaluate(valid_ast);			
@@ -44,11 +43,10 @@ fn interpret(program:String, environment:&mut interpreter::Environment)->String{
 
 
 fn interpret_top_level(program:String, environment:&mut interpreter::Environment)->String{
-	let main_program:String  = String::from("(") + &program + ")";
-	let tokens = parser::lex(main_program);
+	let main_program:String  = String::from("(") + &program + ")";	
 	let p = parser::Parser::new();
 	
-	let result = match p.parse(&tokens){
+	let result = match p.parse_tokens(&parser::tokenize(main_program)){
 		Ok((valid_ast,_)) =>
 			// Parser seemed to work, so attempt to interpret the AST
 			match valid_ast{
