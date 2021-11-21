@@ -142,7 +142,7 @@ impl Lexer{
 				
 				self.advance(); // eat first "
 				let mut content =  "".to_string();
-				while self.this_char() != '"'{
+				while !self.end_of_input() && self.this_char() != '"'{
 					content.push(self.this_char());
 					self.advance();
 				}
@@ -171,17 +171,6 @@ impl Lexer{
 		next_token
 	}
 
-}
-
-pub fn lex(expression: String) -> Vec<String> {
-// Ensure ( and ) are surrounded by whitespace, then
-// organize items into strings
-  expression
-	.replace("(", " ( ")
-	.replace(")", " ) ")
-	.split_whitespace()
-	.map(|x| x.to_string())
-	.collect()
 }
 
 pub fn tokenize(text:String)->Vec<Token>{
