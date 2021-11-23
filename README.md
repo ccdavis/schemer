@@ -13,11 +13,12 @@ The interpreter now supports:
 * Comparisons: '<','=','>'
 * Logical operators: 'or','and'
 * Integer and floating point literals
-* Internally, strings are supported but not string literals
+* String literals now supported
+* List data types and basic functions ('rest', 'first', 'cons', 'list')
 * Definition and use of variables 
 * Definition and evaluation of functions
 * 'set!' for mutating variables when they can't be changed via recursion
-* Local scope within functions
+* Local scope within functions for variable and function scoping
 * The 'if' conditional special form
 * The 'while' iteration special form
 * Multiple expression function bodies
@@ -27,10 +28,8 @@ The interpreter now supports:
 
 Notably missing:
 * 'cond' special form
-* list handling built-in functions like 'list', 'append', 'car', 'cdr' etc.
 * 'do' iteration special form, which is much more lisp-like than the currently implemented 'while'
 * Tail call optimization: without it can't really use recursion for many iteration alternatives since we get a stack overflow eventually
-* String literals parser support
 * Standard input handling and file reading and writing
 * Many more minor but important typical Scheme built-ins
 
@@ -38,7 +37,7 @@ S-Expression evaluation takes place in an environment (scope.) "define" works fo
 
 Some code in "main.rs" shows how one could build tests for language constructs. Just use the __cons()__ function and construct lists of cell values. No need for a tokenizer or REPLat this level. You could perhaps use the s-expression internal representation as a target for a parser of a more conventional type of language.
 
-There's only a basic parser and tokenizer now. Some tests in main take text and parse and interpret it. The app will start up in a REPL mode. You can also pass in a file name of a file with saved code.
+There's a real parser and tokenizer now. Some tests in main take text and parse and interpret it. The app will start up in a REPL mode. You can also pass in a file name of a file with saved code.
 
 ### In Progress
 
@@ -48,13 +47,10 @@ There's only a basic parser and tokenizer now. Some tests in main take text and 
 
 ## To Do
 
-* Replace the current primitive lexer / tokenizer with something better
 * Better error handling: Right now I just use Result<SExpression,String> to pass back error messages.
-* String literals (may require real parser)
 * Code comments (may require real parser)
-* Support list data types
 * Support vectors and maps
-
+* Support more core Scheme functions like type conversion 
 
 
 
